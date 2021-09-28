@@ -16,7 +16,7 @@ func New(token string) (*Bot, error) {
 		return nil, err
 	}
 
-	apiBot.Debug = true
+	// apiBot.Debug = true
 
 	log.Printf("Authorized on account %s", apiBot.Self.UserName)
 

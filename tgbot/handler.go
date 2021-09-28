@@ -1,8 +1,14 @@
 package tgbot
 
 import (
+	"fmt"
+	"log"
 	"regexp"
 
+	"github.com/av1ppp/dada-ptizza_tg-bot/parser"
+	"github.com/av1ppp/dada-ptizza_tg-bot/parser/instagram"
+	"github.com/av1ppp/dada-ptizza_tg-bot/parser/vkontakte"
+	"github.com/av1ppp/dada-ptizza_tg-bot/state"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
 )
 
@@ -10,8 +16,39 @@ func (bot *Bot) handleUpdate(update *tgbotapi.Update) {
 	if update.Message != nil {
 		if update.Message.Text == "/start" {
 			bot.handleStartMessage(update)
+			return
 		}
+
+		ds := state.Get(update.Message.From.ID)
+		if ds.IsSelectUser() {
+			var ui *parser.UserInfo
+			var err error
+
+			if ds.State == state.SELECT_USER_INSTAGRAM {
+				ui, err = instagram.GetUserInfo(update.Message.Text)
+				if err != nil {
+					log.Fatal(err)
+				}
+			} else if ds.State == state.SELECT_USER_VKONTAKTE {
+				ui, err = vkontakte.GetUserInfo(update.Message.Text)
+				if err != nil {
+					log.Fatal(err)
+				}
+			}
+
+			fmt.Println(ui)
+
+			msg := tgbotapi.NewMessage(update.Message.Chat.ID,
+				"**Имя пользователя: "+ui.FullName+"**\n\n"+
+					"➖➖➖➖➖➖➖➖➖➖➖➖➖")
+			bot.Send(msg)
+
+		}
+
 	} else if update.CallbackQuery != nil {
+		// if ds := state.Get(update.CallbackQuery.From.ID); ds.State == state.SELECT_USER {
+
+		// }
 		bot.handleCallback(update)
 	}
 
