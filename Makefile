@@ -1,0 +1,2 @@
+start:
+	go run ./*.go
