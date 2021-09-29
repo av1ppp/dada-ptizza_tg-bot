@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/av1ppp/dada-ptizza_tg-bot/parser"
+	"github.com/av1ppp/dada-ptizza_tg-bot/internal/parser"
 )
 
 type RawUserResp struct {
@@ -17,31 +17,44 @@ type RawUserResp struct {
 	} `json:"graphql"`
 }
 
-func GetUserInfo(url string) (*parser.UserInfo, error) {
+func request(url string) *http.Request {
 	url = url + "?__a=1"
 
 	req, _ := http.NewRequest("GET", url, nil)
 	req.Header.Add("User-Agent", "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:92.0) Gecko/20100101 Firefox/92.0")
+	return req
+}
 
-	// resp, err := http.Get(url)
-	resp, err := http.DefaultClient.Do(req)
+func GetUserInfo(url string) (*parser.UserInfo, error) {
+	req := request(url)
+
+	res, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
+	defer res.Body.Close()
 
-	dec := json.NewDecoder(resp.Body)
+	// Загрузка JSON
+	dec := json.NewDecoder(res.Body)
 	r := RawUserResp{}
 	if err = dec.Decode(&r); err != nil {
 		return nil, err
 	}
 
-	if r.GraphQL.User.FullName == "" {
+	// Парсинг
+	fullName := r.GraphQL.User.FullName
+	if fullName == "" {
 		return nil, parser.ErrWrongServerReponse
 	}
 
+	var picture *parser.Picture
+	pucUrl := r.GraphQL.User.ProfilePicUrlHD
+	if pucUrl != "" {
+		picture, _ = parser.GetPicture(pucUrl)
+	}
+
 	return &parser.UserInfo{
-		FullName: r.GraphQL.User.FullName,
-		// PictureUrl: r.GraphQL.User.ProfilePicUrl,
+		FullName: fullName,
+		Picture:  picture,
 	}, nil
 }

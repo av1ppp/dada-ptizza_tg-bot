@@ -3,25 +3,9 @@ package tgbot
 import (
 	"fmt"
 
-	"github.com/av1ppp/dada-ptizza_tg-bot/state"
+	"github.com/av1ppp/dada-ptizza_tg-bot/internal/tgbot/state"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
 )
-
-func (bot *Bot) handleStartMessage(update *tgbotapi.Update) {
-	msg := tgbotapi.NewPhotoUpload(update.Message.Chat.ID, "assets/start.jpg")
-	msg.Caption = fmt.Sprintf("👋 Привет, %s 😈\\!\n\n"+
-		"*Этот бот может найти приватные фотографии девушек, "+
-		"анализируя их профили во всех социальных сетях и в слитых базах данных 😏*\n\n"+
-		"Приступим? 👇", update.Message.From.FirstName)
-	msg.ParseMode = "MarkdownV2"
-
-	bot.Send(msg)
-
-	bot.sendSelectSocialNetwork(update.Message.Chat.ID)
-
-	// Сохраняем статус
-	state.Save(update.Message.From.ID, state.SELECT_SOCIAL_NETWORK)
-}
 
 // Клавиатура с выбором соц. сети
 var selectSocialNetworkKeyboard = tgbotapi.NewInlineKeyboardMarkup(
@@ -31,15 +15,15 @@ var selectSocialNetworkKeyboard = tgbotapi.NewInlineKeyboardMarkup(
 	tgbotapi.NewInlineKeyboardRow(
 		tgbotapi.NewInlineKeyboardButtonData("ВКонтакте", "social-network__vkontakte"),
 	),
-	tgbotapi.NewInlineKeyboardRow(
-		tgbotapi.NewInlineKeyboardButtonData("Telegram", "social-network__telegram"),
-	),
-	tgbotapi.NewInlineKeyboardRow(
-		tgbotapi.NewInlineKeyboardButtonData("What's App", "social-network__whatsapp"),
-	),
-	tgbotapi.NewInlineKeyboardRow(
-		tgbotapi.NewInlineKeyboardButtonData("Viber", "social-network__viber"),
-	),
+	// tgbotapi.NewInlineKeyboardRow(
+	// 	tgbotapi.NewInlineKeyboardButtonData("Telegram", "social-network__telegram"),
+	// ),
+	// tgbotapi.NewInlineKeyboardRow(
+	// 	tgbotapi.NewInlineKeyboardButtonData("What's App", "social-network__whatsapp"),
+	// ),
+	// tgbotapi.NewInlineKeyboardRow(
+	// 	tgbotapi.NewInlineKeyboardButtonData("Viber", "social-network__viber"),
+	// ),
 )
 
 // Клавиатура с кнопкой "назад"
@@ -84,18 +68,18 @@ func (bot *Bot) handleSelectNetworkCallback(update *tgbotapi.Update, data string
 		text = "✅️ Отправьте ссылку на девушку из ВКонтакте!\n\n" +
 			"📝 Пример: https://vk.com/durov"
 		state_ = state.SELECT_USER_VKONTAKTE
-	case "telegram":
-		text = "✅ Отправьте номер девушки из Telegram!\n\n" +
-			"📝 Пример: +79876543211"
-		state_ = state.SELECT_USER_TELEGRAM
-	case "whatsapp":
-		text = "✅ Отправьте номер девушки из What’S App!\n\n" +
-			"📝 Пример: +79876543211"
-		state_ = state.SELECT_USER_WHATSAPP
-	case "viber":
-		text = "✅ Отправьте ссылку на девушку из Viber!\n\n" +
-			"📝 Пример: +79876543211"
-		state_ = state.SELECT_USER_VIBER
+	// case "telegram":
+	// 	text = "✅ Отправьте номер девушки из Telegram!\n\n" +
+	// 		"📝 Пример: +79876543211"
+	// 	state_ = state.SELECT_USER_TELEGRAM
+	// case "whatsapp":
+	// 	text = "✅ Отправьте номер девушки из What’S App!\n\n" +
+	// 		"📝 Пример: +79876543211"
+	// 	state_ = state.SELECT_USER_WHATSAPP
+	// case "viber":
+	// 	text = "✅ Отправьте ссылку на девушку из Viber!\n\n" +
+	// 		"📝 Пример: +79876543211"
+	// 	state_ = state.SELECT_USER_VIBER
 	default:
 		fmt.Printf("bot.handleSelectNetworkCallback | Неизвестный тип соц. сети: %s\n", data)
 		text = "Произошла ошибка при обработке запроса. Пожалуйста, повторите попытку позже"

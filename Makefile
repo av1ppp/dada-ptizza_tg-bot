@@ -1,2 +1,2 @@
 start:
-	go run ./*.go
+	go run ./cmd/tgbot/*.go

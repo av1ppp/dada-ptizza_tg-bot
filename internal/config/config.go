@@ -10,6 +10,10 @@ type Config struct {
 	TelegramBot struct {
 		Token string `yaml:"token"`
 	} `yaml:"telegram_bot"`
+
+	VK struct {
+		Token string `yaml:"token"`
+	} `yaml:"vk"`
 }
 
 // ParseFile - ...
