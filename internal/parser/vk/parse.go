@@ -1,71 +1,43 @@
 package vk
 
 import (
-	"net/http"
-	"os"
+	"net/url"
+	"strings"
 
-	"github.com/PuerkitoBio/goquery"
 	"github.com/av1ppp/dada-ptizza_tg-bot/internal/parser"
+	"github.com/av1ppp/dada-ptizza_tg-bot/internal/vkapi"
 )
 
-func request(url string) *http.Request {
-	req, _ := http.NewRequest("GET", url, nil)
-	req.Header.Add("User-Agent", "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:92.0) Gecko/20100101 Firefox/92.0")
-	return req
-}
+func GetUserInfo(userUrl *url.URL, vkApi *vkapi.API) (*parser.UserInfo, error) {
+	userId := strings.Split(userUrl.Path, "/")[1]
 
-func GetUserInfo(url string) (*parser.UserInfo, error) {
-	req := request(url)
-
-	res, err := http.DefaultClient.Do(req)
-	if err != nil {
-		return nil, err
+	if userId == "" {
+		return nil, parser.ErrUserNotFound
 	}
-	defer res.Body.Close()
 
-	// data, _ := io.ReadAll(res.Body)
-	// os.WriteFile("durov.html", data, 0755)
-	// return nil, errors.New("ha")
-
-	// Загрузка HTML документа
-	doc, err := goquery.NewDocumentFromReader(res.Body)
+	users, err := vkApi.UsersGet(vkapi.UsersGetParams{
+		UserIds: userId,
+		Fields:  "photo_400_orig",
+	})
 	if err != nil {
 		return nil, err
 	}
 
-	// Парсинг
-	fullName := doc.Find(".op_header").Text()
-	if fullName == "" {
-		fullName = doc.Find(".page_name").Text()
-		if fullName == "" {
-			return nil, parser.ErrWrongServerReponse
-		}
+	if users == nil || len(*users) == 0 {
+		return nil, parser.ErrUserNotFound
 	}
 
+	user := (*users)[0]
+
+	// Get picture
 	var picture *parser.Picture
-	pageAvatarSrc, _ := doc.Find(".page_avatar_img").Attr("src")
-	if pageAvatarSrc != "" {
-		picture, _ = parser.GetPicture(pageAvatarSrc)
-	}
 
-	html, _ := doc.Html()
-	os.WriteFile("durov.html", []byte(html), 0755)
-
-	// TODO: Если кодировка уже utf-8, то ничего не делаем
-	fullNameUTF8, err := windows1251ToUTF8(fullName)
-	if err != nil {
-		return nil, err
-	}
-
-	//asdasd
-	res, err = http.Get(pageAvatarSrc)
-	if err != nil {
-		return nil, err
+	if user.Photo400Orig != "" {
+		picture, _ = parser.GetPicture(user.Photo400Orig)
 	}
 
 	return &parser.UserInfo{
-		FullName:      fullNameUTF8,
-		Picture:       picture,
-		PictureReader: res.Body,
+		FullName: user.FirstName + " " + user.LastName,
+		Picture:  picture,
 	}, nil
 }

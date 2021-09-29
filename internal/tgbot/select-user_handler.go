@@ -2,6 +2,7 @@ package tgbot
 
 import (
 	"fmt"
+	"net/url"
 
 	"github.com/av1ppp/dada-ptizza_tg-bot/internal/parser"
 	"github.com/av1ppp/dada-ptizza_tg-bot/internal/parser/instagram"
@@ -11,13 +12,8 @@ import (
 )
 
 func (bot *Bot) handleSelectUser_sendError(chatID int64) {
-	if lastMsg != nil {
-		msg := tgbotapi.NewEditMessageText(chatID, lastMsg.MessageID, "Не удалось найти пользователя ☹️")
-		bot.Send(msg)
-	} else {
-		msg := tgbotapi.NewMessage(chatID, "Не удалось найти пользователя ☹️")
-		bot.sendAndSave(msg)
-	}
+	msg := tgbotapi.NewMessage(chatID, "Не удалось найти пользователя ☹️")
+	bot.sendAndSave(msg)
 }
 
 // high probability of detecting intimate photos
@@ -58,7 +54,13 @@ func (bot *Bot) handleSelectUser(update *tgbotapi.Update, ds *state.DialogState)
 		}
 
 	} else if ds.State == state.SELECT_USER_VKONTAKTE {
-		ui, err = vk.GetUserInfo(update.Message.Text)
+		url_, err := url.Parse(update.Message.Text)
+		if err != nil {
+			bot.handleSelectUser_sendError(chatID)
+			return
+		}
+
+		ui, err = vk.GetUserInfo(url_, bot.vkApi)
 		if err != nil {
 			bot.handleSelectUser_sendError(chatID)
 			return

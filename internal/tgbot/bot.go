@@ -3,14 +3,17 @@ package tgbot
 import (
 	"log"
 
+	"github.com/av1ppp/dada-ptizza_tg-bot/internal/vkapi"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
 )
 
 type Bot struct {
 	*tgbotapi.BotAPI
+
+	vkApi *vkapi.API
 }
 
-func New(token string) (*Bot, error) {
+func New(token string, vkApi *vkapi.API) (*Bot, error) {
 	apiBot, err := tgbotapi.NewBotAPI(token)
 	if err != nil {
 		return nil, err
@@ -18,9 +21,9 @@ func New(token string) (*Bot, error) {
 
 	// apiBot.Debug = true
 
-	log.Printf("Authorized on account %s", apiBot.Self.UserName)
+	log.Printf("telegram bot - success")
 
-	return &Bot{apiBot}, nil
+	return &Bot{apiBot, vkApi}, nil
 }
 
 func (bot *Bot) Start() error {
