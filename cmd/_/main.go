@@ -20,7 +20,7 @@ func main() {
 		panic(err)
 	}
 
-	u := ymClient.CreateForm(yoomoney.CreateFormOptions{
+	u := ymClient.CreateFormURL(yoomoney.CreateFormOptions{
 		Receiver:     accountInfo.Account,
 		QuickpayForm: "donate",
 		FormComment:  "Проект Железный человек Long",
@@ -31,5 +31,5 @@ func main() {
 		Comment:      "COMMENT",
 	})
 
-	fmt.Println(u)
+	fmt.Println(u.String())
 }
