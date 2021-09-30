@@ -14,6 +14,13 @@ type Config struct {
 	VK struct {
 		Token string `yaml:"token"`
 	} `yaml:"vk"`
+
+	YooMoney struct {
+		AccessToken string `yaml:"access_token"`
+		ClientID    string `yaml:"client_id"`
+		RedirectURI string `yaml:"redirect_uri"`
+		Scope       string `yaml:"scope"`
+	} `yaml:"yoomoney"`
 }
 
 // ParseFile - ...

@@ -4,8 +4,10 @@ go 1.16
 
 require (
 	github.com/PuerkitoBio/goquery v1.7.1 // indirect
+	github.com/absoludity/goforms v0.0.0-20150922005427-081aef0845bc // indirect
 	github.com/go-resty/resty/v2 v2.6.0 // indirect
 	github.com/go-telegram-bot-api/telegram-bot-api v4.6.4+incompatible
+	github.com/gorilla/schema v1.2.0 // indirect
 	github.com/huandu/xstrings v1.3.2 // indirect
 	github.com/stretchr/testify v1.7.0 // indirect
 	github.com/technoweenie/multipartstreamer v1.0.1 // indirect

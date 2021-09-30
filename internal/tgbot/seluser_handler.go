@@ -18,6 +18,17 @@ func (bot *Bot) handleSelectUser_sendError(chatID int64) {
 
 // high probability of detecting intimate photos
 
+// Клавиатура с выбором оплаты
+var buyKeyboard = tgbotapi.NewInlineKeyboardMarkup(
+	tgbotapi.NewInlineKeyboardRow(
+		tgbotapi.NewInlineKeyboardButtonData("Оплата | 39.0₽ 💳", "buy"),
+		// TODO: Добавить ссылку для оплаты
+	),
+	tgbotapi.NewInlineKeyboardRow(
+		tgbotapi.NewInlineKeyboardButtonData("Проверить", "check"),
+	),
+)
+
 // Отправить информацию о найденом пользователе
 func (bot *Bot) sendUserInfo(chatID int64, ui *parser.UserInfo) error {
 	fileBytes := tgbotapi.FileBytes{Name: ui.Picture.Filename, Bytes: *ui.Picture.Data}
@@ -38,6 +49,7 @@ func (bot *Bot) sendUserInfo(chatID int64, ui *parser.UserInfo) error {
 // Отправить сообщение "высокая верятность обнаружения.."
 func (bot *Bot) sendHighProbDetectingPhotos(chatID int64) {
 	msg := tgbotapi.NewMessage(chatID, "⚙️ Высокая вероятность обраружения интимных фотографий")
+	msg.ReplyMarkup = &buyKeyboard
 	bot.Send(msg)
 }
 
@@ -75,6 +87,4 @@ func (bot *Bot) handleSelectUser(update *tgbotapi.Update, ds *state.DialogState)
 	}
 
 	bot.sendHighProbDetectingPhotos(chatID)
-
-	// TODO: Keyboard
 }
