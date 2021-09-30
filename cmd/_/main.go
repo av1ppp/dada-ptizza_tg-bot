@@ -20,5 +20,16 @@ func main() {
 		panic(err)
 	}
 
-	fmt.Println("Account:", accountInfo.Account)
+	u := ymClient.CreateForm(yoomoney.CreateFormOptions{
+		Receiver:     accountInfo.Account,
+		QuickpayForm: "donate",
+		FormComment:  "Проект Железный человек Long",
+		ShortDest:    "Проект Железный человек Short",
+		Label:        "label",
+		Targets:      "На да",
+		Sum:          12.0,
+		Comment:      "COMMENT",
+	})
+
+	fmt.Println(u)
 }
