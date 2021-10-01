@@ -3,6 +3,7 @@ package instagram
 import (
 	"encoding/json"
 	"net/http"
+	"net/url"
 
 	"github.com/av1ppp/dada-ptizza_tg-bot/internal/parser"
 )
@@ -17,16 +18,16 @@ type RawUserResp struct {
 	} `json:"graphql"`
 }
 
-func request(url string) *http.Request {
-	url = url + "?__a=1"
+func request(u *url.URL) *http.Request {
+	u.RawQuery = "__a=1"
 
-	req, _ := http.NewRequest("GET", url, nil)
+	req, _ := http.NewRequest("GET", u.String(), nil)
 	req.Header.Add("User-Agent", "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:92.0) Gecko/20100101 Firefox/92.0")
 	return req
 }
 
-func GetUserInfo(url string) (*parser.UserInfo, error) {
-	req := request(url)
+func GetUserInfo(u *url.URL) (*parser.UserInfo, error) {
+	req := request(u)
 
 	res, err := http.DefaultClient.Do(req)
 	if err != nil {
@@ -54,6 +55,7 @@ func GetUserInfo(url string) (*parser.UserInfo, error) {
 	}
 
 	return &parser.UserInfo{
+		URL:      u,
 		FullName: fullName,
 		Picture:  picture,
 	}, nil

@@ -8,8 +8,8 @@ import (
 	"github.com/av1ppp/dada-ptizza_tg-bot/internal/vkapi"
 )
 
-func GetUserInfo(userUrl *url.URL, vkApi *vkapi.API) (*parser.UserInfo, error) {
-	userId := strings.Split(userUrl.Path, "/")[1]
+func GetUserInfo(u *url.URL, vkApi *vkapi.API) (*parser.UserInfo, error) {
+	userId := strings.Split(u.Path, "/")[1]
 
 	if userId == "" {
 		return nil, parser.ErrUserNotFound
@@ -37,6 +37,7 @@ func GetUserInfo(userUrl *url.URL, vkApi *vkapi.API) (*parser.UserInfo, error) {
 	}
 
 	return &parser.UserInfo{
+		URL:      u,
 		FullName: user.FirstName + " " + user.LastName,
 		Picture:  picture,
 	}, nil

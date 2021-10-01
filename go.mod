@@ -9,6 +9,7 @@ require (
 	github.com/go-telegram-bot-api/telegram-bot-api v4.6.4+incompatible
 	github.com/gorilla/schema v1.2.0 // indirect
 	github.com/huandu/xstrings v1.3.2 // indirect
+	github.com/mattn/go-sqlite3 v1.14.8 // indirect
 	github.com/stretchr/testify v1.7.0 // indirect
 	github.com/technoweenie/multipartstreamer v1.0.1 // indirect
 	golang.org/x/net v0.0.0-20210928044308-7d9f5e0b762b // indirect
