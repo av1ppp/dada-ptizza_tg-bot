@@ -59,7 +59,13 @@ func (bot *Bot) handleSelectUser(update *tgbotapi.Update, ds *state.DialogState)
 	var err error
 
 	if ds.State == state.SELECT_USER_INSTAGRAM {
-		ui, err = instagram.GetUserInfo(update.Message.Text)
+		url_, err := url.Parse(update.Message.Text)
+		if err != nil {
+			bot.handleSelectUser_sendError(chatID)
+			return
+		}
+
+		ui, err = instagram.GetUserInfo(url_)
 		if err != nil {
 			bot.handleSelectUser_sendError(chatID)
 			return

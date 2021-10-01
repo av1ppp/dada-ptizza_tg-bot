@@ -4,8 +4,6 @@ import (
 	"database/sql"
 
 	_ "github.com/mattn/go-sqlite3"
-
-	"github.com/av1ppp/dada-ptizza_tg-bot/internal/config"
 )
 
 /*
@@ -21,8 +19,8 @@ type Store struct {
 	db *sql.DB
 }
 
-func New(conf *config.Config) (*Store, error) {
-	db, err := sql.Open("sqlite3", "productsdb.db")
+func New() (*Store, error) {
+	db, err := sql.Open("sqlite3", "tgbot.db")
 	if err != nil {
 		return nil, err
 	}

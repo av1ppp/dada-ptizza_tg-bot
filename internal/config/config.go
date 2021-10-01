@@ -21,6 +21,10 @@ type Config struct {
 		RedirectURI string `yaml:"redirect_uri"`
 		Scope       string `yaml:"scope"`
 	} `yaml:"yoomoney"`
+
+	Store struct {
+		DBName string `yaml:"db_name"`
+	}
 }
 
 // ParseFile - ...

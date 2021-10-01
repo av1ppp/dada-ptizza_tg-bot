@@ -21,12 +21,34 @@ func (store *Store) SavePurchase(p *purchase.Purchase) error {
 	return err
 }
 
+// DeletePurchase - удаление purchase
+func (store *Store) DeletePurchase(id int64) error {
+	_, err := store.db.Exec("DELETE FROM purchases WHERE id = $1;", id)
+	return err
+}
+
 // Purchase - получение одного purchase
 func (store *Store) Purchase(id int64) (*purchase.Purchase, error) {
 	row := store.db.QueryRow(
 		`SELECT id, chat_id, price, social_network, target_user, label
 			FROM purchases
 			WHERE id = $1`, id)
+
+	var p purchase.Purchase
+
+	if err := row.Scan(&p.ID, &p.ChatID, &p.Price, &p.SocicalNetwork, &p.TargetUser, &p.Label); err != nil {
+		return nil, err
+	}
+
+	return &p, nil
+}
+
+// PurchaseByChatID - получение одного purchase по chat_id
+func (store *Store) PurchaseByChatID(chatID int64) (*purchase.Purchase, error) {
+	row := store.db.QueryRow(
+		`SELECT id, chat_id, price, social_network, target_user, label
+			FROM purchases
+			WHERE chat_id = $1`, chatID)
 
 	var p purchase.Purchase
 

@@ -1,41 +1,47 @@
 package tgbot
 
 import (
-	"regexp"
-
-	"github.com/av1ppp/dada-ptizza_tg-bot/internal/tgbot/state"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
 )
 
 func (bot *Bot) handleUpdate(update *tgbotapi.Update) {
-	if update.Message != nil {
-		// Обработка команды /start
-		if update.Message.Text == "/start" {
-			bot.handleStartMessage(update)
-			return
-		}
 
-		ds := state.Get(update.Message.From.ID)
-
-		// Обработка "получение ссылки на пользователя"
-		if ds.IsSelectUser() {
-			bot.handleSelectUser(update, ds)
-		}
-
-	} else if update.CallbackQuery != nil {
+	// Обработка callbacks
+	if update.CallbackQuery != nil {
 		bot.handleCallback(update)
+		return
 	}
 
-}
-
-var selectNetworkPattern = regexp.MustCompile(`social-network__([\w-]+)`)
-
-func (bot *Bot) handleCallback(update *tgbotapi.Update) {
-	data := update.CallbackQuery.Data
-
-	if selectNetworkPattern.MatchString(data) {
-		bot.handleSelectNetworkCallback(update, selectNetworkPattern.FindStringSubmatch(data)[1])
+	// Обработка сообщений
+	if update.Message.Command() != "" {
+		bot.handleCommand(update.Message.Command(), update)
+		return
 	}
+
+	// Обработка сообщений
+	if update.Message.Text != "" {
+		bot.handleMessage(update.Message.Text, update)
+		return
+	}
+
+	// if update.Message != nil {
+	// 	// Обработка команды /start
+	// 	if update.Message.Text == "/start" {
+	// 		bot.handleStartMessage(update)
+	// 		return
+	// 	}
+
+	// 	ds := state.Get(update.Message.From.ID)
+
+	// 	// Обработка "получение ссылки на пользователя"
+	// 	if ds.IsSelectUser() {
+	// 		bot.handleSelectUser(update, ds)
+	// 	}
+
+	// } else if update.CallbackQuery != nil {
+	// 	bot.handleCallback(update)
+	// }
+
 }
 
 // func (bot *Bot) handleCallback_instagram(update *tgbotapi.Update) {

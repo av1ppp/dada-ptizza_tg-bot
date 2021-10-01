@@ -7,25 +7,6 @@ import (
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
 )
 
-// Клавиатура с выбором соц. сети
-var selectSocialNetworkKeyboard = tgbotapi.NewInlineKeyboardMarkup(
-	tgbotapi.NewInlineKeyboardRow(
-		tgbotapi.NewInlineKeyboardButtonData("Instagram", "social-network__instagram"),
-	),
-	tgbotapi.NewInlineKeyboardRow(
-		tgbotapi.NewInlineKeyboardButtonData("ВКонтакте", "social-network__vkontakte"),
-	),
-	// tgbotapi.NewInlineKeyboardRow(
-	// 	tgbotapi.NewInlineKeyboardButtonData("Telegram", "social-network__telegram"),
-	// ),
-	// tgbotapi.NewInlineKeyboardRow(
-	// 	tgbotapi.NewInlineKeyboardButtonData("What's App", "social-network__whatsapp"),
-	// ),
-	// tgbotapi.NewInlineKeyboardRow(
-	// 	tgbotapi.NewInlineKeyboardButtonData("Viber", "social-network__viber"),
-	// ),
-)
-
 // Клавиатура с кнопкой "назад"
 var selectSocialNetworkBackKayboard = tgbotapi.NewInlineKeyboardMarkup(
 	tgbotapi.NewInlineKeyboardRow(
@@ -33,15 +14,8 @@ var selectSocialNetworkBackKayboard = tgbotapi.NewInlineKeyboardMarkup(
 	),
 )
 
-// Отправка сообщения для выбора соц. сети
-func (bot *Bot) sendSelectSocialNetwork(chatID int64) {
-	msg := tgbotapi.NewMessage(chatID, "🔥 Выбери, где будем искать:")
-	msg.ReplyMarkup = &selectSocialNetworkKeyboard
-	bot.sendAndSave(msg)
-}
-
 // Обработать callback от выбора соц. сети
-func (bot *Bot) handleSelectNetworkCallback(update *tgbotapi.Update, data string) {
+func (bot *Bot) handleSelectSocialNetworkCallback(update *tgbotapi.Update, data string) {
 	chatID := update.CallbackQuery.Message.Chat.ID
 	var text string
 	var state_ state.State

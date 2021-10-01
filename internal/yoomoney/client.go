@@ -9,7 +9,11 @@ type Client struct {
 
 func NewClient(token string) *Client {
 	return &Client{
-		httpClient: http.DefaultClient,
-		token:      token,
+		httpClient: &http.Client{
+			CheckRedirect: func(req *http.Request, via []*http.Request) error {
+				return http.ErrUseLastResponse
+			},
+		},
+		token: token,
 	}
 }

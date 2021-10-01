@@ -30,5 +30,5 @@ func (client *Client) sendRequest(method string, body map[string]string) (*http.
 	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
 	req.Header.Add("Authorization", "Bearer "+client.token)
 
-	return client.httpClient.Do(req)
+	return http.DefaultClient.Do(req)
 }
