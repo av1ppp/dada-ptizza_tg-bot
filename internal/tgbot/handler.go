@@ -5,10 +5,22 @@ import (
 )
 
 func (bot *Bot) handleUpdate(update *tgbotapi.Update) {
+	var chatID int64
+	if update.CallbackQuery != nil {
+		chatID = update.CallbackQuery.Message.Chat.ID
+	} else if update.Message != nil {
+		chatID = update.Message.Chat.ID
+	}
+
+	ds, err := bot.GetDialogState(chatID)
+	if err != nil {
+		bot.sendRequestError(chatID, err)
+		return
+	}
 
 	// Обработка callbacks
 	if update.CallbackQuery != nil {
-		bot.handleCallback(update)
+		bot.handleCallback(update, ds)
 		return
 	}
 
@@ -20,7 +32,7 @@ func (bot *Bot) handleUpdate(update *tgbotapi.Update) {
 
 	// Обработка сообщений
 	if update.Message.Text != "" {
-		bot.handleMessage(update.Message.Text, update)
+		bot.handleMessage(update.Message.Text, update, ds)
 		return
 	}
 

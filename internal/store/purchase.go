@@ -1,6 +1,11 @@
 package store
 
-import "github.com/av1ppp/dada-ptizza_tg-bot/internal/purchase"
+import (
+	"database/sql"
+	"fmt"
+
+	"github.com/av1ppp/dada-ptizza_tg-bot/internal/purchase"
+)
 
 /*
 	id INTEGER PRIMARY KEY AUTOINCREMENT UNIQUE,
@@ -13,12 +18,25 @@ import "github.com/av1ppp/dada-ptizza_tg-bot/internal/purchase"
 
 // SavePurchase - сохранение purchase в базу данных
 func (store *Store) SavePurchase(p *purchase.Purchase) error {
-	_, err := store.db.Exec(
+	fmt.Println("savePerchase")
+
+	result, err := store.db.Exec(
 		`INSERT INTO purchases
 			(id, chat_id, price, social_network, target_user, label)
-			VALUSE ($1, $2, $3, $4, $5, $6);`,
+			VALUES ($1, $2, $3, $4, $5, $6)
+			RETURNING id;`,
 		p.ID, p.ChatID, p.Price, string(p.SocicalNetwork), p.TargetUser, p.Label)
-	return err
+	if err != nil {
+		return err
+	}
+
+	lastID, err := result.LastInsertId()
+	if err != nil {
+		return err
+	}
+
+	p.ID = lastID
+	return nil
 }
 
 // DeletePurchase - удаление purchase
@@ -37,6 +55,9 @@ func (store *Store) Purchase(id int64) (*purchase.Purchase, error) {
 	var p purchase.Purchase
 
 	if err := row.Scan(&p.ID, &p.ChatID, &p.Price, &p.SocicalNetwork, &p.TargetUser, &p.Label); err != nil {
+		if err == sql.ErrNoRows {
+			return nil, ErrPurchaseNotFound
+		}
 		return nil, err
 	}
 
@@ -53,6 +74,9 @@ func (store *Store) PurchaseByChatID(chatID int64) (*purchase.Purchase, error) {
 	var p purchase.Purchase
 
 	if err := row.Scan(&p.ID, &p.ChatID, &p.Price, &p.SocicalNetwork, &p.TargetUser, &p.Label); err != nil {
+		if err == sql.ErrNoRows {
+			return nil, ErrPurchaseNotFound
+		}
 		return nil, err
 	}
 
@@ -90,14 +114,14 @@ func (store *Store) Purchases() ([]*purchase.Purchase, error) {
 func (store *Store) UpdatePurchase(p *purchase.Purchase) error {
 	_, err := store.db.Exec(
 		`UPDATE purchases
-			SET chat_id = $2,
-				price = $3,
-				social_network = $4,
-				target_user = $5,
-				label = $6
+			SET chat_id = $1,
+				price = $2,
+				social_network = $3,
+				target_user = $4,
+				label = $5
 			WHERE
-				id = $1;`,
-		p.ID, p.ChatID, p.Price, p.SocicalNetwork, p.TargetUser, p.Label)
+				id = $6;`,
+		p.ChatID, p.Price, p.SocicalNetwork, p.TargetUser, p.Label, p.ID)
 
 	return err
 }

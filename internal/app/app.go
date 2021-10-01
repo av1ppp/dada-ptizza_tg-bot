@@ -7,32 +7,42 @@ import (
 	"github.com/av1ppp/dada-ptizza_tg-bot/internal/store"
 	"github.com/av1ppp/dada-ptizza_tg-bot/internal/tgbot"
 	"github.com/av1ppp/dada-ptizza_tg-bot/internal/vkapi"
+	"github.com/av1ppp/dada-ptizza_tg-bot/internal/yoomoney"
 )
 
 type App struct {
 	vkApi       *vkapi.API
 	telegramBot *tgbot.Bot
+	yoomoneyApi *yoomoney.Client
 	store       *store.Store
 }
 
 func New(conf *config.Config) (*App, error) {
+	// store
 	s, err := store.New()
 	if err != nil {
 		return nil, err
 	}
 
-	vkApi := vkapi.NewClient("cd5e4b3de057ae5124b4eafd730922b1481f6775cb6984cb731fe3bc1e9129ab7582e99c2994153ea8f9b")
-
+	// vk
+	vkApi := vkapi.NewClient(conf.VK.Token)
 	log.Printf("vk api - success")
 
-	tgBot, err := tgbot.New(conf.TelegramBot.Token, vkApi, s)
+	// yoomoney
+	yoomoneyApi := yoomoney.NewClient(conf.YooMoney.AccessToken)
+	log.Printf("yoomoney api - success")
+
+	// telegram
+	tgBot, err := tgbot.New(conf.TelegramBot.Token, vkApi, s, yoomoneyApi)
 	if err != nil {
 		return nil, err
 	}
+	log.Printf("telegram bot - success")
 
 	return &App{
 		vkApi:       vkApi,
 		telegramBot: tgBot,
+		yoomoneyApi: yoomoneyApi,
 		store:       s,
 	}, nil
 }

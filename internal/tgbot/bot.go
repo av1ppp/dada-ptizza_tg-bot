@@ -1,21 +1,21 @@
 package tgbot
 
 import (
-	"log"
-
 	"github.com/av1ppp/dada-ptizza_tg-bot/internal/store"
 	"github.com/av1ppp/dada-ptizza_tg-bot/internal/vkapi"
+	"github.com/av1ppp/dada-ptizza_tg-bot/internal/yoomoney"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
 )
 
 type Bot struct {
-	vkApi *vkapi.API
-	store *store.Store
+	vkApi       *vkapi.API
+	store       *store.Store
+	yoomoneyApi *yoomoney.Client
 
 	*tgbotapi.BotAPI
 }
 
-func New(token string, vkApi *vkapi.API, store *store.Store) (*Bot, error) {
+func New(token string, vkApi *vkapi.API, store *store.Store, yoomoneyApi *yoomoney.Client) (*Bot, error) {
 	apiBot, err := tgbotapi.NewBotAPI(token)
 	if err != nil {
 		return nil, err
@@ -23,9 +23,7 @@ func New(token string, vkApi *vkapi.API, store *store.Store) (*Bot, error) {
 
 	// apiBot.Debug = true
 
-	log.Printf("telegram bot - success")
-
-	return &Bot{vkApi, store, apiBot}, nil
+	return &Bot{vkApi, store, yoomoneyApi, apiBot}, nil
 }
 
 func (bot *Bot) Start() error {
