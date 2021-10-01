@@ -85,7 +85,7 @@ func (bot *Bot) getBuyKeyboard(ds *DialogState) (*tgbotapi.InlineKeyboardMarkup,
 
 	buyKeyboard := tgbotapi.NewInlineKeyboardMarkup(
 		tgbotapi.NewInlineKeyboardRow(
-			tgbotapi.NewInlineKeyboardButtonURL("Оплата | 39.0₽ 💳", createFormResp.TempURL.String()),
+			tgbotapi.NewInlineKeyboardButtonURL(fmt.Sprintf("Оплата | %.1f₽ 💳", ds.Price), createFormResp.TempURL.String()),
 			// TODO: Добавить ссылку для оплаты
 		),
 		tgbotapi.NewInlineKeyboardRow(

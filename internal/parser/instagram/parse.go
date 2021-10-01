@@ -2,6 +2,8 @@ package instagram
 
 import (
 	"encoding/json"
+	"fmt"
+	"io"
 	"net/http"
 	"net/url"
 
@@ -36,9 +38,14 @@ func GetUserInfo(u *url.URL) (*parser.UserInfo, error) {
 	defer res.Body.Close()
 
 	// Загрузка JSON
-	dec := json.NewDecoder(res.Body)
-	r := RawUserResp{}
-	if err = dec.Decode(&r); err != nil {
+	data, err := io.ReadAll(res.Body)
+	if err != nil {
+		return nil, err
+	}
+	fmt.Println(string(data))
+
+	var r RawUserResp
+	if err := json.Unmarshal(data, &r); err != nil {
 		return nil, err
 	}
 
