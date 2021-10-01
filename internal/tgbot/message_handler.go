@@ -31,7 +31,7 @@ func (bot *Bot) handleMessage(message string, update *tgbotapi.Update, ds *Dialo
 
 	switch ds.SocicalNetwork {
 	case "instagram":
-		ui, err = instagram.GetUserInfo(u)
+		ui, err = instagram.GetUserInfo(u, bot.instagramApi)
 		if err != nil {
 			bot.sendUserNotFound(chatID)
 			return
@@ -111,8 +111,7 @@ func (bot *Bot) sendUserInfoAndBuyKeyboard(chatID int64, ui *parser.UserInfo, ds
 		"*Имя: " + ui.FullName + "*\n\n〰️〰️〰️〰️〰️〰️〰️\n\n" +
 		"🔞 _Приватные фотографии пользователя: ?\n" +
 		"⛔️ Скрытые данные пользователя: ?\n" +
-		"👥 Скрытые друзья пользователя: ?\n\n" +
-		"💰 Стоимость проверки:_ *39\\.0 RUB*"
+		"👥 Скрытые друзья пользователя: ?_\n\n"
 	msg.ParseMode = "MarkdownV2"
 	msg.ReplyMarkup = buyKeyboard
 

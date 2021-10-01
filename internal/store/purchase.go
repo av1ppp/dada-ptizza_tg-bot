@@ -2,7 +2,6 @@ package store
 
 import (
 	"database/sql"
-	"fmt"
 
 	"github.com/av1ppp/dada-ptizza_tg-bot/internal/purchase"
 )
@@ -18,8 +17,6 @@ import (
 
 // SavePurchase - сохранение purchase в базу данных
 func (store *Store) SavePurchase(p *purchase.Purchase) error {
-	fmt.Println("savePerchase")
-
 	result, err := store.db.Exec(
 		`INSERT INTO purchases
 			(id, chat_id, price, social_network, target_user, label)

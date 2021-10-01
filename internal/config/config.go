@@ -11,6 +11,10 @@ type Config struct {
 		Token string `yaml:"token"`
 	} `yaml:"telegram_bot"`
 
+	Instagram struct {
+		SessionID string `yaml:"sessionid"`
+	} `yaml:"instagram"`
+
 	VK struct {
 		Token string `yaml:"token"`
 	} `yaml:"vk"`

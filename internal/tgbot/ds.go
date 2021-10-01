@@ -21,7 +21,7 @@ func (bot *Bot) GetDialogState(chatID int64) (*DialogState, error) {
 		if err == store.ErrPurchaseNotFound {
 			p = &purchase.Purchase{
 				ChatID: chatID,
-				Price:  39.0,
+				Price:  5.0,
 				// Label:  fmt.SprintL("%d_%d", chatID, time.Now().UnixNano()),
 				Label: fmt.Sprint(chatID),
 			}
