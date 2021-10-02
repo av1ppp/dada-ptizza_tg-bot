@@ -19,10 +19,10 @@ import (
 func (store *Store) SavePurchase(p *purchase.Purchase) error {
 	result, err := store.db.Exec(
 		`INSERT INTO purchases
-			(id, chat_id, price, social_network, target_user, label)
-			VALUES ($1, $2, $3, $4, $5, $6)
+			(chat_id, price, social_network, target_user, label)
+			VALUES ($1, $2, $3, $4, $5)
 			RETURNING id;`,
-		p.ID, p.ChatID, p.Price, string(p.SocicalNetwork), p.TargetUser, p.Label)
+		p.ChatID, p.Price, string(p.SocicalNetwork), p.TargetUser, p.Label)
 	if err != nil {
 		return err
 	}

@@ -43,14 +43,3 @@ func (bot *Bot) Start() error {
 
 	return nil
 }
-
-var lastMsg *tgbotapi.Message
-
-// Отправить и сохранить сообщение
-func (bot *Bot) sendAndSave(c tgbotapi.Chattable) (*tgbotapi.Message, error) {
-	msg, err := bot.Send(c)
-	if err == nil {
-		lastMsg = &msg
-	}
-	return &msg, err
-}

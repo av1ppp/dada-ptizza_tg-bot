@@ -3,14 +3,20 @@ package tgbot
 import (
 	"fmt"
 	"sync"
+	"time"
 
 	"github.com/av1ppp/dada-ptizza_tg-bot/internal/purchase"
 	"github.com/av1ppp/dada-ptizza_tg-bot/internal/store"
 )
 
 var mu sync.Mutex
+var price float32 = 5.0
 
 type DialogState = purchase.Purchase
+
+func label(chatID int64) string {
+	return fmt.Sprintf("%x_%x", chatID, time.Now().UnixNano())
+}
 
 func (bot *Bot) GetDialogState(chatID int64) (*DialogState, error) {
 	mu.Lock()
@@ -21,9 +27,8 @@ func (bot *Bot) GetDialogState(chatID int64) (*DialogState, error) {
 		if err == store.ErrPurchaseNotFound {
 			p = &purchase.Purchase{
 				ChatID: chatID,
-				Price:  5.0,
-				// Label:  fmt.SprintL("%d_%d", chatID, time.Now().UnixNano()),
-				Label: fmt.Sprint(chatID),
+				Price:  price,
+				Label:  label(chatID),
 			}
 			if err = bot.store.SavePurchase(p); err != nil {
 				return nil, err
@@ -34,6 +39,14 @@ func (bot *Bot) GetDialogState(chatID int64) (*DialogState, error) {
 	}
 
 	return p, nil
+}
+
+func (bot *Bot) ResetDialogState(ds *DialogState) error {
+	ds.Label = label(ds.ChatID)
+	ds.TargetUser = ""
+	ds.SocicalNetwork = ""
+
+	return bot.SaveDialogState(ds)
 }
 
 func (bot *Bot) SaveDialogState(ds *DialogState) error {
@@ -49,7 +62,6 @@ func (bot *Bot) SaveDialogState(ds *DialogState) error {
 		} else {
 			return err
 		}
-
 	}
 
 	return bot.store.UpdatePurchase(ds)
