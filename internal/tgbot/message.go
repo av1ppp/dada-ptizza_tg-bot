@@ -2,7 +2,6 @@ package tgbot
 
 import (
 	"fmt"
-	"strings"
 
 	"github.com/av1ppp/dada-ptizza_tg-bot/internal/parser"
 	"github.com/av1ppp/dada-ptizza_tg-bot/internal/yoomoney"
@@ -42,17 +41,16 @@ func messageItemUnpaid(chatID int64) tgbotapi.Chattable {
 // Приветственное сообщение
 var _messageStart = func() tgbotapi.PhotoConfig {
 	msg := tgbotapi.NewPhotoUpload(0, "assets/start.jpg")
-	msg.Caption = fmt.Sprint("👋 Привет, {{ FIRST_NAME }} 😈\\!\n\n" +
-		"*Этот бот может найти приватные фотографии девушек, " +
-		"анализируя их профили во всех социальных сетях и в слитых базах данных 😏*\n\n" +
-		"Приступим? 👇")
 	msg.ParseMode = "MarkdownV2"
 	return msg
 }()
 
 func messageStart(chatID int64, firstName string) tgbotapi.Chattable {
 	_messageStart.ChatID = chatID
-	_messageStart.Caption = strings.Replace(_messageStart.Caption, "{{ FIRST_NAME }}", firstName, 1)
+	_messageStart.Caption = fmt.Sprintf("👋 Привет, %s😈\\!\n\n"+
+		"*Этот бот может найти приватные фотографии девушек, "+
+		"анализируя их профили во всех социальных сетях и в слитых базах данных 😏*\n\n"+
+		"Приступим? 👇", firstName)
 	return &_messageStart
 }
 
@@ -134,17 +132,6 @@ func editMessageSendMeVKUrl(chatID int64, messageID int) tgbotapi.Chattable {
 }
 
 // Сообщение с информацией о найденом пользователе
-var _messageUserInfo = func() tgbotapi.PhotoConfig {
-	msg := tgbotapi.NewPhotoUpload(0, nil)
-	msg.Caption = "**Пользователь найден:**\n\n" +
-		"*Имя: {{ FULL_NAME }}*\n\n〰️〰️〰️〰️〰️〰️〰️\n\n" +
-		"🔞 _Приватные фотографии пользователя: ?\n" +
-		"⛔️ Скрытые данные пользователя: ?\n" +
-		"👥 Скрытые друзья пользователя: ?_\n\n"
-	msg.ParseMode = "MarkdownV2"
-	return msg
-}()
-
 func getBuyKeyboard(yoomoneyApi *yoomoney.Client, ds *DialogState) (*tgbotapi.InlineKeyboardMarkup, error) {
 	accountInfoResp, err := yoomoneyApi.CallAccountInfo()
 	if err != nil {
@@ -180,20 +167,24 @@ func getBuyKeyboard(yoomoneyApi *yoomoney.Client, ds *DialogState) (*tgbotapi.In
 }
 
 func messageUserInfo(userInfo *parser.UserInfo, ds *DialogState, yoomoneyApi *yoomoney.Client) (tgbotapi.Chattable, error) {
-	_messageUserInfo.ChatID = ds.ChatID
-	_messageUserInfo.File = tgbotapi.FileBytes{
+	file := tgbotapi.FileBytes{
 		Name:  userInfo.Picture.Filename,
-		Bytes: *userInfo.Picture.Data}
-
-	_messageUserInfo.Caption = strings.Replace(
-		_messageUserInfo.Caption, "{{ FULL_NAME }}", userInfo.FullName, 1)
+		Bytes: *userInfo.Picture.Data,
+	}
 
 	buyKeyboard, err := getBuyKeyboard(yoomoneyApi, ds)
 	if err != nil {
 		return nil, err
 	}
 
-	_messageUserInfo.ReplyMarkup = buyKeyboard
+	msg := tgbotapi.NewPhotoUpload(ds.ChatID, file)
+	msg.Caption = fmt.Sprintf("**Пользователь найден:**\n\n"+
+		"*Имя: %s*\n\n〰️〰️〰️〰️〰️〰️〰️\n\n"+
+		"🔞 _Приватные фотографии пользователя: ?\n"+
+		"⛔️ Скрытые данные пользователя: ?\n"+
+		"👥 Скрытые друзья пользователя: ?_\n\n", userInfo.FullName)
+	msg.ParseMode = "MarkdownV2"
+	msg.ReplyMarkup = buyKeyboard
 
-	return &_messageUserInfo, nil
+	return &msg, nil
 }
