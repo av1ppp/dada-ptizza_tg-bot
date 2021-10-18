@@ -4,20 +4,21 @@ import (
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
 )
 
-func (bot *Bot) handleCommand(update *tgbotapi.Update, ds *DialogState) {
+func (bot *Bot) handleCommand(update *tgbotapi.Update, ds *dialogState) {
 	command := update.Message.Command()
-	chatID := update.Message.Chat.ID
 
 	switch command {
 	case "start":
-		if err := bot.ResetDialogState(ds); err != nil {
-			bot.sendRequestError(chatID, err)
-			return
-		}
-		bot.Send(messageStart(chatID, update.Message.From.FirstName))
-		bot.Send(messageStartSelectSocialNetwork(chatID))
+		ds.Reset()
+		bot.Send(messageStart(ds.ChatID, update.Message.From.FirstName))
+		bot.Send(messageStartSelectSocialNetwork(ds.ChatID))
+
+	case "test":
+		bot.Send(messageHackPhotos(ds.ChatID))
+		msg, _ := messageHackInfo(bot.yoomoneyApi, ds)
+		bot.Send(msg)
 
 	default:
-		bot.Send(messageUnknown(chatID))
+		bot.Send(messageUnknown(ds.ChatID))
 	}
 }

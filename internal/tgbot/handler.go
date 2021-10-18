@@ -2,6 +2,7 @@ package tgbot
 
 import (
 	"fmt"
+	"log"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
 )
@@ -26,11 +27,7 @@ func (bot *Bot) handleUpdate(update *tgbotapi.Update) {
 		return
 	}
 
-	ds, err := bot.GetDialogState(chatID)
-	if err != nil {
-		bot.sendRequestError(chatID, err)
-		return
-	}
+	ds := getDialogState(chatID)
 
 	// Обработка callbacks
 	if update.CallbackQuery != nil {
@@ -52,6 +49,6 @@ func (bot *Bot) handleUpdate(update *tgbotapi.Update) {
 }
 
 func (bot *Bot) sendRequestError(chatID int64, err error) {
-	fmt.Println("Ошибка:", err)
+	log.Printf("Error: %s", err)
 	bot.Send(messageRequestError(chatID))
 }

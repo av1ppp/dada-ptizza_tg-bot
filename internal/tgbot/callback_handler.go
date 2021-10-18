@@ -3,13 +3,14 @@ package tgbot
 import (
 	"strings"
 
+	"github.com/av1ppp/dada-ptizza_tg-bot/internal/store"
 	"github.com/av1ppp/dada-ptizza_tg-bot/internal/yoomoney"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
 )
 
-func (bot *Bot) handleCallback(update *tgbotapi.Update, ds *DialogState) {
-	chatID := update.CallbackQuery.Message.Chat.ID
+func (bot *Bot) handleCallback(update *tgbotapi.Update, ds *dialogState) {
 	messageID := update.CallbackQuery.Message.MessageID
+
 	data := update.CallbackQuery.Data
 	dataItems := strings.Split(data, "__")
 
@@ -25,21 +26,20 @@ func (bot *Bot) handleCallback(update *tgbotapi.Update, ds *DialogState) {
 		switch subcommand {
 		case "back":
 			bot.Send(editMessageStartSelectSocialNetwork(
-				chatID, messageID))
+				ds.ChatID, messageID))
 			return
 
 		case "insta":
 			bot.Send(editMessageSendMeInstaUrl(
-				chatID, messageID))
-			ds.SocicalNetwork = "instagram"
+				ds.ChatID, messageID))
+			ds.SocialNetwork = store.SocialNetworkInsta
 
 		case "vk":
 			bot.Send(editMessageSendMeVKUrl(
-				chatID, messageID))
-			ds.SocicalNetwork = "vkontakte"
+				ds.ChatID, messageID))
+			ds.SocialNetwork = store.SocialNetworkVK
 		}
 
-		bot.SaveDialogState(ds)
 		return
 
 	case "check-payment":
@@ -50,7 +50,8 @@ func (bot *Bot) handleCallback(update *tgbotapi.Update, ds *DialogState) {
 		}
 
 		if paid {
-			bot.Send(messageItemPaid(ds.ChatID))
+			bot.Send(messagePaymentReceived(ds.ChatID))
+
 		} else {
 			bot.Send(messageItemUnpaid(ds.ChatID))
 		}
@@ -58,12 +59,27 @@ func (bot *Bot) handleCallback(update *tgbotapi.Update, ds *DialogState) {
 }
 
 // Проверка, оплатит ли юзер
-func (bot *Bot) checkPayment(ds *DialogState) (bool, error) {
+func (bot *Bot) checkPayment(ds *dialogState) (bool, error) {
 	resp, err := bot.yoomoneyApi.CallOperationHistory(&yoomoney.OperationHistoryRequest{
 		Label: ds.Label,
 	})
 	if err != nil {
 		return false, err
 	}
+	// TODO: Проверять еще и сумму
 	return len(resp.Operations) > 0, nil
 }
+
+// Проверка, оплатит ли юзер
+// TODO: Проверять не по ds, а по store.purchase
+// func (bot *Bot) checkPayment2() (bool, error) {
+
+// 	resp, err := bot.yoomoneyApi.CallOperationHistory(&yoomoney.OperationHistoryRequest{
+// 		Label: ds.Label,
+// 	})
+// 	if err != nil {
+// 		return false, err
+// 	}
+// 	// TODO: Проверять еще и сумму
+// 	return len(resp.Operations) > 0, nil
+// }

@@ -9,7 +9,12 @@ import (
 )
 
 func GetUserInfo(u *url.URL, vkApi *vkapi.API) (*parser.UserInfo, error) {
-	userId := strings.Split(u.Path, "/")[1]
+	userUrlSplit := strings.Split(u.Path, "/")
+	if len(userUrlSplit) < 2 {
+		return nil, parser.ErrWrongUrl
+	}
+
+	userId := userUrlSplit[1]
 
 	if userId == "" {
 		return nil, parser.ErrUserNotFound
@@ -17,7 +22,7 @@ func GetUserInfo(u *url.URL, vkApi *vkapi.API) (*parser.UserInfo, error) {
 
 	users, err := vkApi.UsersGet(vkapi.UsersGetParams{
 		UserIds: userId,
-		Fields:  "photo_400_orig",
+		Fields:  "photo_400_orig,sex",
 	})
 	if err != nil {
 		return nil, err
@@ -37,8 +42,10 @@ func GetUserInfo(u *url.URL, vkApi *vkapi.API) (*parser.UserInfo, error) {
 	}
 
 	return &parser.UserInfo{
-		URL:      u,
-		FullName: user.FirstName + " " + user.LastName,
-		Picture:  picture,
+		URL:       u,
+		FirstName: user.FirstName,
+		LastName:  user.LastName,
+		Picture:   picture,
+		Sex:       parser.Sex(user.Sex),
 	}, nil
 }

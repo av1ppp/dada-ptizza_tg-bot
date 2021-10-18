@@ -5,64 +5,69 @@ import (
 	"sync"
 	"time"
 
-	"github.com/av1ppp/dada-ptizza_tg-bot/internal/purchase"
 	"github.com/av1ppp/dada-ptizza_tg-bot/internal/store"
 )
 
-var mu sync.Mutex
-var price float32 = 5.0
+type dialogState struct {
+	ChatID        int64
+	Label         string
+	TargetUserURL string
+	SocialNetwork store.SocialNetwork
+}
 
-type DialogState = purchase.Purchase
+var mu sync.Mutex
+var dialogStates []*dialogState
 
 func label(chatID int64) string {
 	return fmt.Sprintf("%x_%x", chatID, time.Now().UnixNano())
 }
 
-func (bot *Bot) GetDialogState(chatID int64) (*DialogState, error) {
+func getDialogState(chatID int64) *dialogState {
 	mu.Lock()
 	defer mu.Unlock()
 
-	p, err := bot.store.PurchaseByChatID(chatID)
-	if err != nil {
-		if err == store.ErrPurchaseNotFound {
-			p = &purchase.Purchase{
-				ChatID: chatID,
-				Price:  price,
-				Label:  label(chatID),
-			}
-			if err = bot.store.SavePurchase(p); err != nil {
-				return nil, err
-			}
-		} else {
-			return nil, err
+	var ds *dialogState
+
+	for _, ds_ := range dialogStates {
+		if ds_.ChatID == chatID {
+			ds = ds_
 		}
 	}
 
-	return p, nil
+	if ds == nil {
+		ds = &dialogState{
+			ChatID:        chatID,
+			Label:         label(chatID),
+			TargetUserURL: "",
+			SocialNetwork: "",
+		}
+
+		dialogStates = append(dialogStates, ds)
+	}
+
+	return ds
 }
 
-func (bot *Bot) ResetDialogState(ds *DialogState) error {
+func (ds *dialogState) Reset() {
 	ds.Label = label(ds.ChatID)
-	ds.TargetUser = ""
-	ds.SocicalNetwork = ""
-
-	return bot.SaveDialogState(ds)
+	ds.TargetUserURL = ""
+	ds.SocialNetwork = ""
 }
 
-func (bot *Bot) SaveDialogState(ds *DialogState) error {
-	mu.Lock()
-	defer mu.Unlock()
+// func (ds *DialogState) SaveDialogState() {
+// 	mu.Lock()
+// 	defer mu.Unlock()
 
-	if _, err := bot.store.Purchase(ds.ID); err != nil {
-		if err == store.ErrPurchaseNotFound {
-			if err := bot.store.SavePurchase(ds); err != nil {
-				return err
-			}
-			return nil
-		} else {
-			return err
-		}
-	}
+// 	if _, err := store.GetPurchaseByID(ds.ID); err != nil {
+// 		if err == store.ErrPurchaseNotFound {
+// 			if err := store.SavePurchase(ds); err != nil {
+// 				return err
+// 			}
+// 			return nil
+// 		} else {
+// 			return err
+// 		}
+// 	}
 
-	return bot.store.UpdatePurchase(ds)
-}
+// 	return store.UpdatePurchaseByID(ds)
+// }

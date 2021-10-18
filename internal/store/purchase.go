@@ -2,27 +2,45 @@ package store
 
 import (
 	"database/sql"
-
-	"github.com/av1ppp/dada-ptizza_tg-bot/internal/purchase"
 )
 
-/*
-	id INTEGER PRIMARY KEY AUTOINCREMENT UNIQUE,
-	chat_id INTEGER UNIQUE,
-	price REAL,
-	social_network TEXT,
-	target_user TEXT,
-	label TEXT
-*/
+type PurchaseSQL struct {
+	ID           int64
+	ChatID       int64
+	Price        float32
+	TargetUserID int64
+	Label        string
+}
+
+type Purchase struct {
+	ID         int64
+	ChatID     int64
+	Price      float32
+	TargetUser *User
+	Label      string
+}
 
 // SavePurchase - сохранение purchase в базу данных
-func (store *Store) SavePurchase(p *purchase.Purchase) error {
+func (store *Store) SavePurchase(p *Purchase) error {
+	if p.TargetUser != nil {
+		if err := UpdateOrSaveUser(p.TargetUser); err != nil {
+			return err
+		}
+	}
+
+	sql := PurchaseSQL{
+		ChatID: p.ChatID,
+		Price:  p.Price,
+		Label:  p.Label,
+	}
+	if p.TargetUser != nil {
+		sql.TargetUserID = p.TargetUser.ID
+	}
+
 	result, err := store.db.Exec(
-		`INSERT INTO purchases
-			(chat_id, price, social_network, target_user, label)
-			VALUES ($1, $2, $3, $4, $5)
-			RETURNING id;`,
-		p.ChatID, p.Price, string(p.SocicalNetwork), p.TargetUser, p.Label)
+		`INSERT INTO purchases(chat_id, price, target_user_id, label)
+			VALUES ($1, $2, $3, $4);`,
+		sql.ChatID, sql.Price, sql.TargetUserID, sql.Label)
 	if err != nil {
 		return err
 	}
@@ -38,20 +56,20 @@ func (store *Store) SavePurchase(p *purchase.Purchase) error {
 
 // DeletePurchase - удаление purchase
 func (store *Store) DeletePurchase(id int64) error {
-	_, err := store.db.Exec("DELETE FROM purchases WHERE id = $1;", id)
+	_, err := store.db.Exec("DELETE FROM purchases WHERE id = $1", id)
 	return err
 }
 
 // Purchase - получение одного purchase
-func (store *Store) Purchase(id int64) (*purchase.Purchase, error) {
+func (store *Store) GetPurchaseByID(id int64) (*Purchase, error) {
 	row := store.db.QueryRow(
-		`SELECT id, chat_id, price, social_network, target_user, label
+		`SELECT id, chat_id, price, target_user_id, label
 			FROM purchases
 			WHERE id = $1`, id)
 
-	var p purchase.Purchase
+	var p Purchase
 
-	if err := row.Scan(&p.ID, &p.ChatID, &p.Price, &p.SocicalNetwork, &p.TargetUser, &p.Label); err != nil {
+	if err := row.Scan(&p.ID, &p.ChatID, &p.Price, &p.TargetUserID, &p.Label); err != nil {
 		if err == sql.ErrNoRows {
 			return nil, ErrPurchaseNotFound
 		}
@@ -62,15 +80,15 @@ func (store *Store) Purchase(id int64) (*purchase.Purchase, error) {
 }
 
 // PurchaseByChatID - получение одного purchase по chat_id
-func (store *Store) PurchaseByChatID(chatID int64) (*purchase.Purchase, error) {
+func (store *Store) GetPurchaseByChatID(chatID int64) (*Purchase, error) {
 	row := store.db.QueryRow(
-		`SELECT id, chat_id, price, social_network, target_user, label
+		`SELECT id, chat_id, price, target_user_id, label
 			FROM purchases
 			WHERE chat_id = $1`, chatID)
 
-	var p purchase.Purchase
+	var p Purchase
 
-	if err := row.Scan(&p.ID, &p.ChatID, &p.Price, &p.SocicalNetwork, &p.TargetUser, &p.Label); err != nil {
+	if err := row.Scan(&p.ID, &p.ChatID, &p.Price, &p.TargetUserID, &p.Label); err != nil {
 		if err == sql.ErrNoRows {
 			return nil, ErrPurchaseNotFound
 		}
@@ -81,44 +99,52 @@ func (store *Store) PurchaseByChatID(chatID int64) (*purchase.Purchase, error) {
 }
 
 // Purchases - получение всех purchases
-func (store *Store) Purchases() ([]*purchase.Purchase, error) {
-	purchases := []*purchase.Purchase{}
+// func (store *Store) AllPurchases() ([]*Purchase, error) {
+// 	purchases := []*purchase.Purchase{}
 
-	result, err := store.db.Query("SELECT id, chat_id, price, social_network, target_user, label FROM purchases;")
-	if err != nil {
-		return nil, err
-	}
-	defer result.Close()
+// 	result, err := store.db.Query("SELECT id, chat_id, price, social_network, target_user, label FROM purchases;")
+// 	if err != nil {
+// 		return nil, err
+// 	}
+// 	defer result.Close()
 
-	for result.Next() {
-		var p purchase.Purchase
-		var socnet string
+// 	for result.Next() {
+// 		var p purchase.Purchase
+// 		var socnet string
 
-		err := result.Scan(&p.ID, &p.ChatID, &p.Price, &socnet, &p.TargetUser, &p.Label)
-		if err != nil {
-			return nil, err
-		}
+// 		err := result.Scan(&p.ID, &p.ChatID, &p.Price, &socnet, &p.TargetUser, &p.Label)
+// 		if err != nil {
+// 			return nil, err
+// 		}
 
-		p.SocicalNetwork = purchase.SocialNetwork(socnet)
+// 		p.SocicalNetwork = purchase.SocialNetwork(socnet)
 
-		purchases = append(purchases, &p)
-	}
+// 		purchases = append(purchases, &p)
+// 	}
 
-	return purchases, nil
-}
+// 	return purchases, nil
+// }
 
 // UpdatePurchase - обновление purchase
-func (store *Store) UpdatePurchase(p *purchase.Purchase) error {
+func (store *Store) UpdatePurchaseByID(p *Purchase) error {
 	_, err := store.db.Exec(
 		`UPDATE purchases
-			SET chat_id = $1,
+			SET
+				chat_id = $1,
 				price = $2,
-				social_network = $3,
-				target_user = $4,
-				label = $5
+				target_user_id = $3,
+				label = $4
 			WHERE
-				id = $6;`,
-		p.ChatID, p.Price, p.SocicalNetwork, p.TargetUser, p.Label, p.ID)
+				id = $5`,
+		p.ChatID, p.Price, p.TargetUserID, p.Label, p.ID)
 
 	return err
+}
+
+func (store *Store) UpdateOrSavePurchase(p *Purchase) error {
+	_, err := GetPurchaseByChatID(p.ChatID)
+	if err == nil {
+		return UpdatePurchaseByID(p)
+	}
+	return SavePurchase(p)
 }

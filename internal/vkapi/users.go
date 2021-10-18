@@ -18,6 +18,7 @@ type UserInfo struct {
 	Deactivated     string `json:"deactivated"`
 	IsClosed        bool   `json:"is_closed"`
 	CanAccessClosed bool   `json:"can_access_closed"`
+	Sex             int    `json:"sex"`
 
 	Photo400Orig string `json:"photo_400_orig"`
 }

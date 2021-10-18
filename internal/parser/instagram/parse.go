@@ -27,9 +27,20 @@ func GetUserInfo(u *url.URL, instagramApi *instagram.Client) (*parser.UserInfo, 
 		picture, _ = parser.GetPicture(pucUrl)
 	}
 
+	splitName := strings.Split(userInfo.FullName, " ")
+	var fname, lname string
+	if len(splitName) >= 1 {
+		fname = splitName[0]
+	}
+	if len(splitName) >= 2 {
+		lname = splitName[1]
+	}
+
 	return &parser.UserInfo{
-		URL:      u,
-		FullName: userInfo.FullName,
-		Picture:  picture,
+		URL:       u,
+		FirstName: fname,
+		LastName:  lname,
+		Picture:   picture,
+		Sex:       parser.SexFemale,
 	}, nil
 }
