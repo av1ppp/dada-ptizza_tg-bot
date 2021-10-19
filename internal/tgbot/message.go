@@ -175,7 +175,7 @@ func editMessageUserNotFound(chatID int64, messageID int) tgbotapi.Chattable {
 }
 
 // Сообщение с информацией о найденом пользователе
-func getBuyKeyboard(yoomoneyApi *yoomoney.Client, ds *dialogState) (*tgbotapi.InlineKeyboardMarkup, error) {
+func getBuyKeyboard(yoomoneyApi *yoomoney.Client, p *store.Purchase) (*tgbotapi.InlineKeyboardMarkup, error) {
 	accountInfoResp, err := yoomoneyApi.CallAccountInfo()
 	if err != nil {
 		return nil, err
@@ -189,7 +189,7 @@ func getBuyKeyboard(yoomoneyApi *yoomoney.Client, ds *dialogState) (*tgbotapi.In
 		FormComment: "Телеграм бот",
 		ShortDest:   "Телеграм бот",
 
-		Label:   ds.Label,
+		Label:   p.Label,
 		Targets: "Оплата | Телеграм бот",
 		Sum:     defaultPrice,
 	})
@@ -205,9 +205,9 @@ func getBuyKeyboard(yoomoneyApi *yoomoney.Client, ds *dialogState) (*tgbotapi.In
 		FormComment: "Телеграм бот",
 		ShortDest:   "Телеграм бот",
 
-		Label:   ds.Label,
+		Label:   p.Label,
 		Targets: "Оплата | Телеграм бот",
-		Sum:     999,
+		Sum:     defaultPriceUnlimint,
 	})
 	if err != nil {
 		return nil, err
@@ -234,13 +234,13 @@ func getBuyKeyboard(yoomoneyApi *yoomoney.Client, ds *dialogState) (*tgbotapi.In
 	return &buyKeyboard, nil
 }
 
-func messageUserInfo(user *store.User, ds *dialogState, yoomoneyApi *yoomoney.Client) (tgbotapi.Chattable, error) {
+func messageUserInfo(user *store.User, p *store.Purchase, yoomoneyApi *yoomoney.Client) (tgbotapi.Chattable, error) {
 	file := tgbotapi.FileBytes{
 		Bytes: user.Picture,
 		Name:  "picture",
 	}
 
-	buyKeyboard, err := getBuyKeyboard(yoomoneyApi, ds)
+	buyKeyboard, err := getBuyKeyboard(yoomoneyApi, p)
 	if err != nil {
 		return nil, err
 	}
@@ -261,7 +261,7 @@ func messageUserInfo(user *store.User, ds *dialogState, yoomoneyApi *yoomoney.Cl
 		defaultPrice,
 	)
 
-	msg := tgbotapi.NewPhotoUpload(ds.ChatID, file)
+	msg := tgbotapi.NewPhotoUpload(p.ChatID, file)
 	msg.Caption = strings.ReplaceAll(text, ".", "\\.")
 	msg.ParseMode = "MarkdownV2"
 	msg.ReplyMarkup = buyKeyboard
@@ -293,7 +293,7 @@ func messageHackPhotos(chatID int64) tgbotapi.Chattable {
 }
 
 // Сообщение с информацией о найденом пользователе
-func getBuyArchiveKeyboard(yoomoneyApi *yoomoney.Client, ds *dialogState) (*tgbotapi.InlineKeyboardMarkup, error) {
+func getBuyArchiveKeyboard(yoomoneyApi *yoomoney.Client, p *store.Purchase) (*tgbotapi.InlineKeyboardMarkup, error) {
 	accountInfoResp, err := yoomoneyApi.CallAccountInfo()
 	if err != nil {
 		return nil, err
@@ -307,7 +307,7 @@ func getBuyArchiveKeyboard(yoomoneyApi *yoomoney.Client, ds *dialogState) (*tgbo
 		FormComment: "Телеграм бот",
 		ShortDest:   "Телеграм бот",
 
-		Label:   ds.Label,
+		Label:   p.Label,
 		Targets: "Оплата | Телеграм бот",
 		Sum:     defaultPrice,
 	})
@@ -327,13 +327,17 @@ func getBuyArchiveKeyboard(yoomoneyApi *yoomoney.Client, ds *dialogState) (*tgbo
 	return &buyKeyboard, nil
 }
 
-func messageHackInfo(yoomoneyApi *yoomoney.Client, ds *dialogState) (tgbotapi.Chattable, error) {
-	keyboard, err := getBuyArchiveKeyboard(yoomoneyApi, ds)
+func messageHackInfo(yoomoneyApi *yoomoney.Client, p *store.Purchase) (tgbotapi.Chattable, error) {
+	if p.TargetUser == nil {
+		return nil, ErrUnknownUser
+	}
+
+	keyboard, err := getBuyArchiveKeyboard(yoomoneyApi, p)
 	if err != nil {
 		return nil, err
 	}
 
-	msg := tgbotapi.NewMessage(ds.ChatID, fmt.Sprintf(
+	msg := tgbotapi.NewMessage(p.ChatID, fmt.Sprintf(
 		"Взлом найден ✅\n\n"+
 			"Имя пользователя: %s\n"+
 			"ID: 363123452\n"+
@@ -342,7 +346,7 @@ func messageHackInfo(yoomoneyApi *yoomoney.Client, ds *dialogState) (tgbotapi.Ch
 			"Интим фото: В наличии ✅\n"+
 			"Интим видео: В наличии ✅\n\n"+
 			"Архив взломанной страницы уже сформирован. Все диалоги и вложения страницы готовы к отправке.",
-		ds.TargetUserURL),
+		p.TargetUser.FirstName),
 	)
 	msg.ReplyMarkup = keyboard
 

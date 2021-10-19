@@ -1,9 +1,12 @@
 package tgbot
 
 import (
+	"database/sql"
 	"fmt"
 	"log"
+	"time"
 
+	"github.com/av1ppp/dada-ptizza_tg-bot/internal/store"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
 )
 
@@ -14,6 +17,10 @@ func chatIDFromUpdate(update *tgbotapi.Update) int64 {
 		return update.Message.Chat.ID
 	}
 	return 0
+}
+
+func label(chatID int64) string {
+	return fmt.Sprintf("%x_%x", chatID, time.Now().UnixNano())
 }
 
 func (bot *Bot) handleUpdate(update *tgbotapi.Update) {
@@ -27,23 +34,41 @@ func (bot *Bot) handleUpdate(update *tgbotapi.Update) {
 		return
 	}
 
-	ds := getDialogState(chatID)
+	// Получаем purchase, если нету - создаем
+	p, err := store.GetPurchaseByChatID(chatID)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			p = &store.Purchase{
+				ChatID: chatID,
+				Price:  defaultPrice,
+				Label:  label(chatID),
+			}
+
+			if err = store.SavePurchase(p); err != nil {
+				bot.sendRequestError(chatID, err)
+				return
+			}
+		} else {
+			bot.sendRequestError(chatID, err)
+			return
+		}
+	}
 
 	// Обработка callbacks
 	if update.CallbackQuery != nil {
-		bot.handleCallback(update, ds)
+		bot.handleCallback(update, p)
 		return
 	}
 
 	// Обработка команд
 	if update.Message.Command() != "" {
-		bot.handleCommand(update, ds)
+		bot.handleCommand(update, p)
 		return
 	}
 
 	// Обработка сообщений
 	if update.Message.Text != "" {
-		bot.handleMessage(update, ds)
+		bot.handleMessage(update, p)
 		return
 	}
 }

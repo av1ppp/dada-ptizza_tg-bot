@@ -8,7 +8,7 @@ import (
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
 )
 
-func (bot *Bot) handleCallback(update *tgbotapi.Update, ds *dialogState) {
+func (bot *Bot) handleCallback(update *tgbotapi.Update, p *store.Purchase) {
 	messageID := update.CallbackQuery.Message.MessageID
 
 	data := update.CallbackQuery.Data
@@ -26,42 +26,40 @@ func (bot *Bot) handleCallback(update *tgbotapi.Update, ds *dialogState) {
 		switch subcommand {
 		case "back":
 			bot.Send(editMessageStartSelectSocialNetwork(
-				ds.ChatID, messageID))
+				p.ChatID, messageID))
 			return
 
 		case "insta":
 			bot.Send(editMessageSendMeInstaUrl(
-				ds.ChatID, messageID))
-			ds.SocialNetwork = store.SocialNetworkInsta
+				p.ChatID, messageID))
 
 		case "vk":
 			bot.Send(editMessageSendMeVKUrl(
-				ds.ChatID, messageID))
-			ds.SocialNetwork = store.SocialNetworkVK
+				p.ChatID, messageID))
 		}
 
 		return
 
 	case "check-payment":
-		paid, err := bot.checkPayment(ds)
+		paid, err := bot.checkPayment(p)
 		if err != nil {
-			bot.sendRequestError(ds.ChatID, err)
+			bot.sendRequestError(p.ChatID, err)
 			return
 		}
 
 		if paid {
-			bot.Send(messagePaymentReceived(ds.ChatID))
+			bot.Send(messagePaymentReceived(p.ChatID))
 
 		} else {
-			bot.Send(messageItemUnpaid(ds.ChatID))
+			bot.Send(messageItemUnpaid(p.ChatID))
 		}
 	}
 }
 
 // Проверка, оплатит ли юзер
-func (bot *Bot) checkPayment(ds *dialogState) (bool, error) {
+func (bot *Bot) checkPayment(p *store.Purchase) (bool, error) {
 	resp, err := bot.yoomoneyApi.CallOperationHistory(&yoomoney.OperationHistoryRequest{
-		Label: ds.Label,
+		Label: p.Label,
 	})
 	if err != nil {
 		return false, err
