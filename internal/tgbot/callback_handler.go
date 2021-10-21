@@ -2,8 +2,10 @@ package tgbot
 
 import (
 	"strings"
+	"time"
 
 	"github.com/av1ppp/dada-ptizza_tg-bot/internal/store"
+	"github.com/av1ppp/dada-ptizza_tg-bot/internal/tgbot/message"
 	"github.com/av1ppp/dada-ptizza_tg-bot/internal/yoomoney"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
 )
@@ -25,59 +27,96 @@ func (bot *Bot) handleCallback(update *tgbotapi.Update, p *store.Purchase) {
 
 		switch subcommand {
 		case "back":
-			bot.Send(editMessageStartSelectSocialNetwork(
-				p.ChatID, messageID))
+			bot.Send(message.EditMessageSelectSocialNetwork(p.ChatID, messageID))
 			return
 
 		case "insta":
-			bot.Send(editMessageSendMeInstaUrl(
-				p.ChatID, messageID))
+			bot.Send(message.EditMessageSendMeInstaUrl(p.ChatID, messageID))
 
 		case "vk":
-			bot.Send(editMessageSendMeVKUrl(
-				p.ChatID, messageID))
+			bot.Send(message.EditMessageSendMeVKUrl(p.ChatID, messageID))
 		}
 
 		return
 
 	case "check-payment":
-		paid, err := bot.checkPayment(p)
-		if err != nil {
-			bot.sendRequestError(p.ChatID, err)
+		if len(dataItems) < 2 {
 			return
 		}
+		subcommand := dataItems[1]
 
-		if paid {
-			bot.Send(messagePaymentReceived(p.ChatID))
+		switch subcommand {
+		case "check":
+			paid, err := bot.checkPayment_check(p)
+			if err != nil {
+				bot.sendRequestError(p.ChatID, err)
+				return
+			}
 
-		} else {
-			bot.Send(messageItemUnpaid(p.ChatID))
+			// Поступи ли платеж на проверку
+			if paid {
+				bot.sendUserInfoArchiveFormed(p)
+				return
+			} else {
+				bot.Send(message.MessageItemUnpaid(p.ChatID))
+				return
+			}
+		case "archive":
+
+			// ...
+		case "check_unlimit":
+			// ...
 		}
+
+	}
+}
+
+func (bot *Bot) sendUserInfoArchiveFormed(p *store.Purchase) {
+	// Отправляем "процесс поиска"
+	delay := time.Second + time.Millisecond*200 // 1.2sec
+	tmpMsgCh := make(chan int)
+	go bot.sendSearchProgess(p.ChatID, delay, tmpMsgCh) // ...wait
+	tmpMsgID := <-tmpMsgCh
+
+	msgs, err := message.MessagesUserInfoArchiveFormed(p, bot.yoomoneyApi)
+	if err != nil {
+		bot.sendRequestError(p.ChatID, err)
+		return
+	}
+
+	// Удаляем временное сообщение
+	bot.DeleteMessage(tgbotapi.NewDeleteMessage(p.ChatID, tmpMsgID))
+
+	// Отправляем фейк инфу о юзере
+	for _, msg := range msgs {
+		bot.Send(msg)
 	}
 }
 
 // Проверка, оплатит ли юзер
-func (bot *Bot) checkPayment(p *store.Purchase) (bool, error) {
-	resp, err := bot.yoomoneyApi.CallOperationHistory(&yoomoney.OperationHistoryRequest{
-		Label: p.Label,
-	})
+func (bot *Bot) checkPayment_check(p *store.Purchase) (bool, error) {
+	req := yoomoney.OperationHistoryRequest{
+		Label: p.Label + "__check",
+	}
+
+	resp, err := bot.yoomoneyApi.CallOperationHistory(&req)
 	if err != nil {
 		return false, err
 	}
-	// TODO: Проверять еще и сумму
+
 	return len(resp.Operations) > 0, nil
 }
 
 // Проверка, оплатит ли юзер
-// TODO: Проверять не по ds, а по store.purchase
-// func (bot *Bot) checkPayment2() (bool, error) {
+func (bot *Bot) checkPayment_archive(p *store.Purchase) (bool, error) {
+	req := yoomoney.OperationHistoryRequest{
+		Label: p.Label + "__archive",
+	}
 
-// 	resp, err := bot.yoomoneyApi.CallOperationHistory(&yoomoney.OperationHistoryRequest{
-// 		Label: ds.Label,
-// 	})
-// 	if err != nil {
-// 		return false, err
-// 	}
-// 	// TODO: Проверять еще и сумму
-// 	return len(resp.Operations) > 0, nil
-// }
+	resp, err := bot.yoomoneyApi.CallOperationHistory(&req)
+	if err != nil {
+		return false, err
+	}
+
+	return len(resp.Operations) > 0, nil
+}

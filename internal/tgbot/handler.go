@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/av1ppp/dada-ptizza_tg-bot/internal/store"
+	"github.com/av1ppp/dada-ptizza_tg-bot/internal/tgbot/message"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
 )
 
@@ -38,11 +39,16 @@ func (bot *Bot) handleUpdate(update *tgbotapi.Update) {
 	p, err := store.GetPurchaseByChatID(chatID)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			p = &store.Purchase{
+			p = store.NewPurchase(&store.PurchaseConfig{
 				ChatID: chatID,
-				Price:  defaultPrice,
 				Label:  label(chatID),
-			}
+				// CheckPrice:        49,
+				// UnlimitCheckPrice: 999,
+				// ArchivePrice:      450,
+				CheckPrice:        3,
+				UnlimitCheckPrice: 5,
+				ArchivePrice:      7,
+			})
 
 			if err = store.SavePurchase(p); err != nil {
 				bot.sendRequestError(chatID, err)
@@ -75,5 +81,5 @@ func (bot *Bot) handleUpdate(update *tgbotapi.Update) {
 
 func (bot *Bot) sendRequestError(chatID int64, err error) {
 	log.Printf("Error: %s", err)
-	bot.Send(messageRequestError(chatID))
+	bot.Send(message.MessageRequestError(chatID))
 }

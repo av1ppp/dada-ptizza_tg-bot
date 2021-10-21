@@ -4,6 +4,7 @@ import (
 	"regexp"
 
 	"github.com/av1ppp/dada-ptizza_tg-bot/internal/store"
+	"github.com/av1ppp/dada-ptizza_tg-bot/internal/tgbot/message"
 )
 
 var instRe = regexp.MustCompile(`(?:(?:http|https):\/\/)?(?:www.)?(?:instagram.com|instagr.am)\/[A-Za-z0-9-_]+`)
@@ -16,5 +17,5 @@ func DetectSocialNetwork(url string) (store.SocialNetwork, error) {
 	if vkRe.MatchString(url) {
 		return store.SocialNetworkVK, nil
 	}
-	return "", ErrUnknownSocialNetwork
+	return "", message.ErrUnknownSocialNetwork
 }

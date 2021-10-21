@@ -9,6 +9,7 @@ import (
 	"github.com/av1ppp/dada-ptizza_tg-bot/internal/parser/instagram"
 	"github.com/av1ppp/dada-ptizza_tg-bot/internal/parser/vk"
 	"github.com/av1ppp/dada-ptizza_tg-bot/internal/store"
+	"github.com/av1ppp/dada-ptizza_tg-bot/internal/tgbot/message"
 	"github.com/av1ppp/dada-ptizza_tg-bot/pkg/rand"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
 )
@@ -18,16 +19,11 @@ func (bot *Bot) handleMessage(update *tgbotapi.Update, p *store.Purchase) {
 }
 
 func (bot *Bot) searchUser(update *tgbotapi.Update, p *store.Purchase) {
-	message := update.Message.Text
-	delay := time.Second + time.Millisecond*200 // 1.2sec
+	msgText := update.Message.Text
 
-	if message == "" {
+	if msgText == "" {
 		return
 	}
-
-	// Отправляем "процесс поиска"
-	tmpMsgCh := make(chan int)
-	go bot.sendSearchProgess(p.ChatID, delay, tmpMsgCh)
 
 	// Ищем, есть ли запрашиваемый пользователь в БД.
 	// Если нету - создаем.
@@ -41,15 +37,15 @@ func (bot *Bot) searchUser(update *tgbotapi.Update, p *store.Purchase) {
 		ui     *parser.UserInfo
 	)
 
-	p.TargetUser, err = store.GetUserByURL(message)
+	p.TargetUser, err = store.GetUserByURL(msgText)
 	if err != nil && err == sql.ErrNoRows {
 		func() {
-			socnet, err = DetectSocialNetwork(message)
+			socnet, err = DetectSocialNetwork(msgText)
 			if err != nil {
 				return
 			}
 
-			u, err = url.Parse(message)
+			u, err = url.Parse(msgText)
 			if err != nil {
 				return
 			}
@@ -66,7 +62,7 @@ func (bot *Bot) searchUser(update *tgbotapi.Update, p *store.Purchase) {
 					return
 				}
 			default:
-				err = ErrUnknownSocialNetwork
+				err = message.ErrUnknownSocialNetwork
 				return
 			}
 
@@ -74,7 +70,7 @@ func (bot *Bot) searchUser(update *tgbotapi.Update, p *store.Purchase) {
 				FirstName:          ui.FirstName,
 				LastName:           ui.LastName,
 				Picture:            *ui.Picture.Data,
-				URL:                message,
+				URL:                msgText,
 				SocialNetwork:      socnet,
 				CountPrivatePhotos: rand.IntMinMax(39, 58),
 				CountPrivateVideos: rand.IntMinMax(12, 21),
@@ -96,21 +92,18 @@ func (bot *Bot) searchUser(update *tgbotapi.Update, p *store.Purchase) {
 		unf = false
 	}
 
-	// ...wait
-	tmpMsgID := <-tmpMsgCh
-
 	if err != nil {
 		bot.sendRequestError(p.ChatID, err)
 		return
 	}
 	if unf {
-		bot.Send(messageUserNotFound(p.ChatID))
+		bot.Send(message.MessageUserNotFound(p.ChatID))
 		return
 	}
 
 	// Если мужской пол - отвечаем мол пользователя нету
 	if p.TargetUser.Sex == store.SexMale {
-		bot.Send(editMessageUserNotFound(p.ChatID, tmpMsgID))
+		bot.Send(message.MessageUserNotFound(p.ChatID))
 		return
 	}
 
@@ -121,7 +114,7 @@ func (bot *Bot) searchUser(update *tgbotapi.Update, p *store.Purchase) {
 		return
 	}
 
-	msg_, err := messageUserInfo(p.TargetUser, p, bot.yoomoneyApi)
+	msg_, err := message.MessageUserInfoHiddenCounters(p, bot.yoomoneyApi)
 	if err != nil {
 		bot.sendRequestError(p.ChatID, err)
 	}
@@ -129,24 +122,20 @@ func (bot *Bot) searchUser(update *tgbotapi.Update, p *store.Purchase) {
 	if _, err := bot.Send(msg_); err != nil {
 		bot.sendRequestError(p.ChatID, err)
 	}
-
-	// Удаляем временное сообщение
-	bot.DeleteMessage(tgbotapi.NewDeleteMessage(p.ChatID, tmpMsgID))
-
 }
 
 // Отправляет статус поиска. Возвращает ID сообщения
 func (bot *Bot) sendSearchProgess(chatID int64, delay time.Duration, tmpMsgCh chan int) {
 	// Идёт поиск 🔍...
-	tmpMsg, _ := bot.Send(messageSearchInProgess(chatID))
+	tmpMsg, _ := bot.Send(message.MessageSearchInProgess(chatID))
 	time.Sleep(delay)
 
 	// Проверяем наши взломы 😈...
-	bot.Send(editMessageCheckOurHacks(chatID, tmpMsg.MessageID))
+	bot.Send(message.EditMessageCheckOurHacks(chatID, tmpMsg.MessageID))
 	time.Sleep(delay)
 
 	// Проверяем наши сливы 🤯...
-	bot.Send(editMessageCheckOurPlums(chatID, tmpMsg.MessageID))
+	bot.Send(message.EditMessageCheckOurPlums(chatID, tmpMsg.MessageID))
 	time.Sleep(delay)
 
 	tmpMsgCh <- tmpMsg.MessageID

@@ -41,9 +41,18 @@ func New() (*Store, error) {
 			id INTEGER PRIMARY KEY AUTOINCREMENT UNIQUE,
 
 			chat_id        INTEGER UNIQUE,
-			price          REAL,
 			target_user_id INTEGER,
 			label          TEXT,
+
+			check_price    REAL,
+			check_paid	   INTEGER,
+
+			unlimit_check_price REAL,
+			unlimit_check_paid  INTEGER,
+			unlimit_check_date  TEXT,
+
+			archive_price  REAL,
+			archive_paid   INTEGER,
 
 			FOREIGN KEY (target_user_id) REFERENCES users(id)
 				ON UPDATE CASCADE
