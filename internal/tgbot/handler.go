@@ -36,7 +36,7 @@ func (bot *Bot) handleUpdate(update *tgbotapi.Update) {
 	}
 
 	// Получаем purchase, если нету - создаем
-	p, err := store.GetPurchaseByChatID(chatID)
+	p, err := store.GetActivePurchaseByChatID(chatID)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			p = store.NewPurchase(&store.PurchaseConfig{
@@ -49,6 +49,7 @@ func (bot *Bot) handleUpdate(update *tgbotapi.Update) {
 				UnlimitCheckPrice: 5,
 				ArchivePrice:      7,
 			})
+			p.SetActive(true)
 
 			if err = store.SavePurchase(p); err != nil {
 				bot.sendRequestError(chatID, err)

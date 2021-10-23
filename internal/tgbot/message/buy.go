@@ -94,7 +94,7 @@ func getBuyArchiveKeyboard(yoomoneyApi *yoomoney.Client, p *store.Purchase) (*tg
 	buyKeyboard := tgbotapi.NewInlineKeyboardMarkup(
 		tgbotapi.NewInlineKeyboardRow(
 			tgbotapi.NewInlineKeyboardButtonURL(
-				fmt.Sprintf("💰 Приобрести архив | %.1f₽", p.CheckPrice),
+				fmt.Sprintf("💰 Приобрести архив | %.1f₽", p.ArchivePrice),
 				paymentForm.TempURL.String(),
 			),
 		),

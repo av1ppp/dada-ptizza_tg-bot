@@ -4,7 +4,6 @@ import (
 	"log"
 
 	tgbotApp "github.com/av1ppp/dada-ptizza_tg-bot/internal/app"
-	"github.com/av1ppp/dada-ptizza_tg-bot/internal/config"
 )
 
 func main() {
@@ -14,12 +13,7 @@ func main() {
 }
 
 func mainInner() error {
-	conf, err := config.ParseFile("./config.yaml")
-	if err != nil {
-		return err
-	}
-
-	app, err := tgbotApp.New(conf)
+	app, err := tgbotApp.New()
 	if err != nil {
 		return err
 	}

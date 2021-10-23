@@ -59,8 +59,8 @@ func GetPurchaseByID(id int64) (*Purchase, error) {
 	return stdStore().GetPurchaseByID(id)
 }
 
-func GetPurchaseByChatID(chatID int64) (*Purchase, error) {
-	return stdStore().GetPurchaseByChatID(chatID)
+func GetActivePurchaseByChatID(chatID int64) (*Purchase, error) {
+	return stdStore().GetActivePurchaseByChatID(chatID)
 }
 
 func UpdatePurchaseByID(p *Purchase) error {
@@ -69,4 +69,8 @@ func UpdatePurchaseByID(p *Purchase) error {
 
 func UpdateOrSavePurchase(p *Purchase) error {
 	return stdStore().UpdateOrSavePurchase(p)
+}
+
+func GetPurchasesByChatID(chatID int64) ([]*Purchase, error) {
+	return stdStore().GetPurchasesByChatID(chatID)
 }

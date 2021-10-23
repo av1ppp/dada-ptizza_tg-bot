@@ -8,6 +8,7 @@ type Purchase struct {
 	ChatID     int64
 	TargetUser *User
 	Label      string
+	active     int
 
 	CheckPrice float32
 	checkPaid  int // 1 or 0
@@ -44,12 +45,40 @@ func NewPurchase(conf *PurchaseConfig) *Purchase {
 	}
 }
 
+func (p *Purchase) Active() bool {
+	return p.active != 0
+}
+
+func (p *Purchase) SetActive(value bool) {
+	if value {
+		p.active = 1
+	} else {
+		p.active = 0
+	}
+}
+
 func (p *Purchase) CheckPaid() bool {
 	return p.checkPaid != 0
 }
 
+func (p *Purchase) SetCheckPaid(value bool) {
+	if value {
+		p.checkPaid = 1
+	} else {
+		p.checkPaid = 0
+	}
+}
+
 func (p *Purchase) UnlimitCheckPaid() bool {
 	return p.unlimitCheckPaid != 0
+}
+
+func (p *Purchase) SetUnlimitCheckPaid(value bool) {
+	if value {
+		p.unlimitCheckPaid = 1
+	} else {
+		p.unlimitCheckPaid = 0
+	}
 }
 
 func (p *Purchase) UnlimitCheckDate() (time.Time, error) {
@@ -62,6 +91,14 @@ func (p *Purchase) SetUnlimitCheckDate(d time.Time) {
 
 func (p *Purchase) ArchivePaid() bool {
 	return p.archivePaid != 0
+}
+
+func (p *Purchase) SetArchivePaid(value bool) {
+	if value {
+		p.archivePaid = 1
+	} else {
+		p.archivePaid = 0
+	}
 }
 
 // SavePurchase - сохранение purchase в базу данных
@@ -80,6 +117,7 @@ func (store *Store) SavePurchase(p *Purchase) error {
 			chat_id,
 			target_user_id,
 			label,
+			active,
 			check_price,
 			check_paid,
 			unlimit_check_price,
@@ -87,12 +125,13 @@ func (store *Store) SavePurchase(p *Purchase) error {
 			unlimit_check_date,
 			archive_price,
 			archive_paid
-		) VALUES ( $1, $2, $3, $4, $5, $6, $7, $8, $9, $10 )`
+		) VALUES ( $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11 )`
 
 	args := []interface{}{
 		p.ChatID,
 		targetUserID,
 		p.Label,
+		p.active,
 		p.CheckPrice,
 		p.checkPaid,
 		p.UnlimitCheckPrice,
@@ -132,6 +171,7 @@ func (store *Store) GetPurchaseByID(id int64) (*Purchase, error) {
 			chat_id,
 			target_user_id,
 			label,
+			active,
 			check_price,
 			check_paid,
 			unlimit_check_price,
@@ -149,6 +189,7 @@ func (store *Store) GetPurchaseByID(id int64) (*Purchase, error) {
 		&p.ChatID,
 		&targetUserID,
 		&p.Label,
+		&p.active,
 		&p.CheckPrice,
 		&p.checkPaid,
 		&p.UnlimitCheckPrice,
@@ -173,9 +214,8 @@ func (store *Store) GetPurchaseByID(id int64) (*Purchase, error) {
 	return &p, nil
 }
 
-// PurchaseByChatID - получение одного purchase по chat_id
-func (store *Store) GetPurchaseByChatID(chatID int64) (*Purchase, error) {
-	var p Purchase
+func (store *Store) GetPurchasesByChatID(chatID int64) ([]*Purchase, error) {
+	purchases := []*Purchase{}
 
 	sql :=
 		`SELECT
@@ -183,6 +223,7 @@ func (store *Store) GetPurchaseByChatID(chatID int64) (*Purchase, error) {
 			chat_id,
 			target_user_id,
 			label,
+			active,
 			check_price,
 			check_paid,
 			unlimit_check_price,
@@ -191,7 +232,73 @@ func (store *Store) GetPurchaseByChatID(chatID int64) (*Purchase, error) {
 			archive_price,
 			archive_paid
 		FROM purchases
-		WHERE chat_id = $1`
+		WHERE
+			chat_id = $1 AND active = 1`
+
+	rows, err := store.db.Query(sql, chatID)
+	if err != nil {
+		return nil, err
+	}
+
+	for rows.Next() {
+		var p Purchase
+
+		var targetUserID int64
+
+		dest := []interface{}{
+			&p.ID,
+			&p.ChatID,
+			&targetUserID,
+			&p.Label,
+			&p.active,
+			&p.CheckPrice,
+			&p.checkPaid,
+			&p.UnlimitCheckPrice,
+			&p.unlimitCheckPaid,
+			&p.unlimitCheckDate,
+			&p.ArchivePrice,
+			&p.archivePaid,
+		}
+
+		if err := store.db.QueryRow(sql, chatID).Scan(dest...); err != nil {
+			return nil, err
+		}
+
+		if targetUserID != 0 {
+			u, err := GetUserByID(targetUserID)
+			if err != nil {
+				return nil, err
+			}
+			p.TargetUser = u
+		}
+
+		purchases = append(purchases, &p)
+	}
+
+	return purchases, nil
+}
+
+// PurchaseByChatID - получение одного purchase по chat_id
+func (store *Store) GetActivePurchaseByChatID(chatID int64) (*Purchase, error) {
+	var p Purchase
+
+	sql :=
+		`SELECT
+			id,
+			chat_id,
+			target_user_id,
+			label,
+			active,
+			check_price,
+			check_paid,
+			unlimit_check_price,
+			unlimit_check_paid,
+			unlimit_check_date,
+			archive_price,
+			archive_paid
+		FROM purchases
+		WHERE
+			chat_id = $1 AND active = 1`
 
 	var targetUserID int64
 
@@ -200,6 +307,7 @@ func (store *Store) GetPurchaseByChatID(chatID int64) (*Purchase, error) {
 		&p.ChatID,
 		&targetUserID,
 		&p.Label,
+		&p.active,
 		&p.CheckPrice,
 		&p.checkPaid,
 		&p.UnlimitCheckPrice,
@@ -238,20 +346,22 @@ func (store *Store) UpdatePurchaseByID(p *Purchase) error {
 				chat_id = $1,
 				target_user_id = $2,
 				label = $3,
-				check_price = $4,
-				check_paid = $5,
-				unlimit_check_price = $6,
-				unlimit_check_paid = $7,
-				unlimit_check_date = $8,
-				archive_price = $9,
-				archive_paid = $10
+				active = $4,
+				check_price = $5,
+				check_paid = $6,
+				unlimit_check_price = $7,
+				unlimit_check_paid = $8,
+				unlimit_check_date = $9,
+				archive_price = $10,
+				archive_paid = $11
 			WHERE
-				id = $11`
+				id = $12`
 
 	args := []interface{}{
 		p.ChatID,
 		targetUserID,
 		p.Label,
+		p.active,
 		p.CheckPrice,
 		p.checkPaid,
 		p.UnlimitCheckPrice,
@@ -267,9 +377,9 @@ func (store *Store) UpdatePurchaseByID(p *Purchase) error {
 }
 
 func (store *Store) UpdateOrSavePurchase(p *Purchase) error {
-	_, err := GetPurchaseByChatID(p.ChatID)
+	_, err := store.GetActivePurchaseByChatID(p.ChatID)
 	if err == nil {
-		return UpdatePurchaseByID(p)
+		return store.UpdatePurchaseByID(p)
 	}
-	return SavePurchase(p)
+	return store.SavePurchase(p)
 }

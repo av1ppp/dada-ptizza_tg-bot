@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/av1ppp/dada-ptizza_tg-bot/internal/config"
 	"github.com/av1ppp/dada-ptizza_tg-bot/internal/store"
 	"github.com/av1ppp/dada-ptizza_tg-bot/internal/yoomoney"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
@@ -56,10 +57,11 @@ func EditMessageUserNotFound(chatID int64, messageID int) tgbotapi.Chattable {
 func MessagesUserInfoArchiveFormed(p *store.Purchase, yoomoneyApi *yoomoney.Client) ([]tgbotapi.Chattable, error) {
 	var err error
 
-	msgPhotos := tgbotapi.NewMediaGroup(p.ChatID, []interface{}{
-		tgbotapi.NewInputMediaPhoto("https://raw.githubusercontent.com/php-telegram-bot/assets/master/logo/512px/logo_plain.png"),
-		tgbotapi.NewInputMediaPhoto("https://blog.pythonanywhere.com/images/bot-chat-session.png"),
-	})
+	files := []interface{}{}
+	for _, p := range config.Global().Hacks[0].Blur {
+		files = append(files, tgbotapi.NewInputMediaPhoto(p))
+	}
+	msgPhotos := tgbotapi.NewMediaGroup(p.ChatID, files)
 
 	text := fmt.Sprintf("**Взлом найден ✅**\n\n"+
 		"*Имя пользователя: %s %s\n"+
@@ -89,6 +91,16 @@ func MessagesUserInfoArchiveFormed(p *store.Purchase, yoomoneyApi *yoomoney.Clie
 	}
 
 	return []tgbotapi.Chattable{msgPhotos, msgText}, nil
+}
+
+func MessagesUserInfoArchivePictures(p *store.Purchase) tgbotapi.Chattable {
+	files := []interface{}{}
+	for _, p := range config.Global().Hacks[0].Orig {
+		files = append(files, tgbotapi.NewInputMediaPhoto(p))
+	}
+	msgPhotos := tgbotapi.NewMediaGroup(p.ChatID, files)
+
+	return msgPhotos
 }
 
 func MessageUserInfoHiddenCounters(p *store.Purchase, yoomoneyApi *yoomoney.Client) (tgbotapi.Chattable, error) {

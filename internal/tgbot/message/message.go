@@ -21,7 +21,7 @@ func MessageItemUnpaid(chatID int64) tgbotapi.Chattable {
 
 // Приветственное сообщение
 func MessageStart(chatID int64, firstName string) tgbotapi.Chattable {
-	msg := tgbotapi.NewPhotoUpload(chatID, "assets/start.jpg")
+	msg := tgbotapi.NewPhotoUpload(chatID, "assets/img/start.jpg")
 	msg.ParseMode = "MarkdownV2"
 	msg.Caption = fmt.Sprintf("👋 Привет, %s😈\\!\n\n"+
 		"*Этот бот может найти приватные фотографии девушек, "+

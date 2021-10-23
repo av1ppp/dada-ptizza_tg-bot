@@ -40,9 +40,10 @@ func New() (*Store, error) {
 		CREATE TABLE IF NOT EXISTS purchases (
 			id INTEGER PRIMARY KEY AUTOINCREMENT UNIQUE,
 
-			chat_id        INTEGER UNIQUE,
+			chat_id        INTEGER,
 			target_user_id INTEGER,
 			label          TEXT,
+			active		   INTEGER,
 
 			check_price    REAL,
 			check_paid	   INTEGER,

@@ -56,14 +56,35 @@ func (bot *Bot) handleCallback(update *tgbotapi.Update, p *store.Purchase) {
 			// Поступи ли платеж на проверку
 			if paid {
 				bot.sendUserInfoArchiveFormed(p)
+				p.SetCheckPaid(true)
+				if err := store.UpdatePurchaseByID(p); err != nil {
+					bot.sendRequestError(p.ChatID, err)
+				}
 				return
 			} else {
 				bot.Send(message.MessageItemUnpaid(p.ChatID))
 				return
 			}
 		case "archive":
+			paid, err := bot.checkPayment_archive(p)
+			if err != nil {
+				bot.sendRequestError(p.ChatID, err)
+				return
+			}
 
-			// ...
+			// Поступи ли платеж на проверку
+			if paid {
+				p.SetArchivePaid(true)
+				p.SetActive(false)
+				if err := store.UpdatePurchaseByID(p); err != nil {
+					bot.sendRequestError(p.ChatID, err)
+					return
+				}
+				bot.Send(message.MessagesUserInfoArchivePictures(p))
+			} else {
+				bot.Send(message.MessageItemUnpaid(p.ChatID))
+				return
+			}
 		case "check_unlimit":
 			// ...
 		}

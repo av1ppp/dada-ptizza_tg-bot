@@ -186,9 +186,9 @@ func (store *Store) DeleteUserByID(id int64) error {
 }
 
 func (store *Store) UpdateOrSaveUser(u *User) error {
-	_, err := GetUserByURL(u.URL)
+	_, err := store.GetUserByURL(u.URL)
 	if err == nil {
-		return UpdateUserByID(u)
+		return store.UpdateUserByID(u)
 	}
-	return SaveUser(u)
+	return store.SaveUser(u)
 }

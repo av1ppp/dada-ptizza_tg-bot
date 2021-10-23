@@ -6,6 +6,12 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
+type HackConfig struct {
+	ID   string   `yaml:"id"`
+	Blur []string `yaml:"blur"`
+	Orig []string `yaml:"orig"`
+}
+
 type Config struct {
 	TelegramBot struct {
 		Token string `yaml:"token"`
@@ -29,6 +35,8 @@ type Config struct {
 	Store struct {
 		DBName string `yaml:"db_name"`
 	}
+
+	Hacks []HackConfig `yaml:"hacks"`
 }
 
 // ParseFile - ...

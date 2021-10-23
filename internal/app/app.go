@@ -17,7 +17,9 @@ type App struct {
 	yoomoneyApi  *yoomoney.Client
 }
 
-func New(conf *config.Config) (*App, error) {
+func New() (*App, error) {
+	conf := config.Global()
+
 	// vk
 	vkApi := vkapi.NewClient(conf.VK.Token)
 	log.Printf("vk api - success")
